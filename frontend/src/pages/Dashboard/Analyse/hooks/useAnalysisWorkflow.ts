@@ -97,6 +97,8 @@ export const useAnalysisWorkflow = () => {
       let reportRes;
       try {
         reportRes = await apiService.generateReport();
+        // Refresh reports archive in store
+        useEnvironmentStore.getState().fetchReports();
       } catch (err: any) {
         reportRes = { status: 'SUCCESS' };
       }

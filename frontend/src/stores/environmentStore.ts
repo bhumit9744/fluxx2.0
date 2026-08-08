@@ -9,15 +9,51 @@ import {
 import { apiService } from '../services/api';
 import { replayService } from '../services/replay';
 import { wsClient } from '../services/websocket';
+import { FlightState } from '../types/flight';
+import { calculateMetrics, getDefaultMetrics, DashboardMetrics } from '../utils/calculateMetrics';
 
 export type AppMode = 'home' | 'login' | 'dashboard';
 export type PrimarySection = 'overview' | 'environment' | 'analyse' | 'reports' | 'live-map' | 'intelligence' | 'flight-ops';
 export type MapEngineType = 'google_3d' | 'maplibre_twin';
 export type LayerType = 'pm25' | 'pm10' | 'co2' | 'temperature' | 'humidity' | 'windSpeed';
 
-
-import { FlightState } from '../types/flight';
-import { calculateMetrics, getDefaultMetrics, DashboardMetrics } from '../utils/calculateMetrics';
+export interface ReportItem {
+  id: string;
+  title: string;
+  type: 'survey' | 'analysis' | 'compliance' | 'incident' | string;
+  location: string;
+  createdAt: string;
+  created_at?: string;
+  dataset: {
+    filename: string;
+    observations: number;
+    startTime: string;
+    endTime: string;
+  };
+  observations: number;
+  metrics: {
+    pm25?: number;
+    pm10?: number;
+    co2?: number;
+    temperature?: number;
+    humidity?: number;
+    wind?: number;
+  };
+  pm25?: number;
+  eri?: number;
+  risk: {
+    score: number;
+    level: string;
+  };
+  risk_level?: string;
+  summary: string;
+  findings?: string[];
+  pros?: string[];
+  cons?: string[];
+  recommendations?: any[];
+  fullReport?: any;
+  pdfUrl?: string;
+}
 
 export interface EnvironmentState {
   appMode: AppMode;
@@ -26,7 +62,7 @@ export interface EnvironmentState {
   history: NormalizedReading[];
   allSamples: NormalizedReading[];
   replayStatus: ReplayStatus;
-  eri: EnvironmentalRiskIndex;
+  eri: EnvironmentalRiskIndex | null;
   heatmapData: IDWHeatmapData | null;
   liveMapData: any | null;
   selectedLayer: LayerType;
@@ -42,13 +78,24 @@ export interface EnvironmentState {
   googleMapsApiKey: string;
   isGeneratingReport: boolean;
   reportData: AIAnalysisReport | null;
+  aiChatHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+  isAiProcessing: boolean;
 
   // Dashboard Unified State
   dashboardData: DashboardMetrics;
   timeFilter: '6H' | '12H' | '24H' | '7D' | '30D';
   isUploadModalOpen: boolean;
 
-  // 3-Step Analysis Workflow State
+  // Reports Section State
+  reportsList: ReportItem[];
+  selectedReportDetail: ReportItem | null;
+  isReportsLoading: boolean;
+  reportsSearchQuery: string;
+  reportsCategoryFilter: string;
+  reportsSortBy: string;
+  isReportPreviewOpen: boolean;
+
+  // Analysis 3-Step Workflow State
   workflow: {
     currentStep: 'process' | 'analysis' | 'report' | 'complete';
     processing: {
@@ -72,7 +119,7 @@ export interface EnvironmentState {
     };
   };
 
-  // Flight Ops Simulation State
+  // Hardware & Spatial Settings
   flightState: FlightState;
 
   // Actions
@@ -91,6 +138,17 @@ export interface EnvironmentState {
   closeUploadModal: () => void;
   setDashboardData: (data: DashboardMetrics) => void;
   recalculateDashboard: () => void;
+
+  // Reports Actions
+  fetchReports: () => Promise<void>;
+  fetchReportById: (id: string) => Promise<ReportItem | null>;
+  deleteReport: (id: string) => Promise<void>;
+  generateAndSaveReport: (payload?: any) => Promise<string | null>;
+  setReportsSearchQuery: (query: string) => void;
+  setReportsCategoryFilter: (category: string) => void;
+  setReportsSortBy: (sortBy: string) => void;
+  setReportPreviewOpen: (open: boolean) => void;
+  setSelectedReportDetail: (report: ReportItem | null) => void;
 
   setWorkflowStep: (step: 'process' | 'analysis' | 'report' | 'complete') => void;
   updateWorkflowState: (partial: Partial<EnvironmentState['workflow']>) => void;
@@ -143,10 +201,9 @@ const defaultReading: NormalizedReading = {
 const defaultERI: EnvironmentalRiskIndex = {
   score: 64,
   level: 'MODERATE',
-  primary_pollutant: 'PM2.5',
-  confidence: 87,
+  primary_pollutant: 'PM2.5 Surge',
   factors: {
-    pm25_surge: 61,
+    pm25_surge: 64,
     pm10_elevation: 22,
     wind_stagnation: 11,
     humidity: 6
@@ -188,17 +245,27 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   showVTOL: true,
   is3DMode: true,
   presentationMode: false,
-  theme: 'light',
   connected: false,
   mapEngine: 'google_3d',
   googleMapsApiKey: initialApiKey,
   isGeneratingReport: false,
   reportData: null,
+  aiChatHistory: [],
+  isAiProcessing: false,
 
   // Dashboard Unified State
   dashboardData: getDefaultMetrics('kharghar_dataset.csv'),
   timeFilter: '24H',
   isUploadModalOpen: false,
+
+  // Reports Section Initial State
+  reportsList: [],
+  selectedReportDetail: null,
+  isReportsLoading: false,
+  reportsSearchQuery: '',
+  reportsCategoryFilter: 'All',
+  reportsSortBy: 'newest',
+  isReportPreviewOpen: false,
 
   workflow: {
     currentStep: 'process',
@@ -271,22 +338,88 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     set({ dashboardData: calculated });
   },
 
-  setWorkflowStep: (currentStep) => set((state) => ({
-    workflow: { ...state.workflow, currentStep }
-  })),
-
-  updateWorkflowState: (partial) => set((state) => ({
-    workflow: { ...state.workflow, ...partial }
-  })),
-
+  setWorkflowStep: (step) => set((state) => ({ workflow: { ...state.workflow, currentStep: step } })),
+  updateWorkflowState: (partial) => set((state) => ({ workflow: { ...state.workflow, ...partial } })),
   resetWorkflow: () => set({
     workflow: {
       currentStep: 'process',
-      processing: { status: 'idle', progress: 0, details: null },
-      analysis: { status: 'idle', progress: 0, result: null },
-      report: { status: 'idle', progress: 0, url: undefined, reportData: null }
+      processing: { status: 'idle', progress: 0, details: null, error: undefined },
+      analysis: { status: 'idle', progress: 0, result: null, error: undefined },
+      report: { status: 'idle', progress: 0, url: undefined, reportData: null, error: undefined }
     }
   }),
+
+  // Reports Actions
+  setReportsSearchQuery: (reportsSearchQuery) => {
+    set({ reportsSearchQuery });
+  },
+  setReportsCategoryFilter: (reportsCategoryFilter) => {
+    set({ reportsCategoryFilter });
+  },
+  setReportsSortBy: (reportsSortBy) => {
+    set({ reportsSortBy });
+  },
+  setReportPreviewOpen: (isReportPreviewOpen) => {
+    set({ isReportPreviewOpen });
+  },
+  setSelectedReportDetail: (selectedReportDetail) => {
+    set({ selectedReportDetail });
+  },
+
+  fetchReports: async () => {
+    set({ isReportsLoading: true });
+    try {
+      const search = get().reportsSearchQuery;
+      const category = get().reportsCategoryFilter;
+      const sortBy = get().reportsSortBy;
+      const res = await apiService.getReports({ search, category, sort_by: sortBy });
+      if (res && res.reports) {
+        set({ reportsList: res.reports, isReportsLoading: false });
+      } else {
+        set({ isReportsLoading: false });
+      }
+    } catch (e) {
+      console.warn('Failed to fetch reports list:', e);
+      set({ isReportsLoading: false });
+    }
+  },
+
+  fetchReportById: async (id: string) => {
+    try {
+      const res = await apiService.getReportById(id);
+      if (res && res.report) {
+        set({ selectedReportDetail: res.report, isReportPreviewOpen: true });
+        return res.report;
+      }
+      return null;
+    } catch (e) {
+      console.error('Failed to fetch report by id:', e);
+      return null;
+    }
+  },
+
+  deleteReport: async (id: string) => {
+    try {
+      await apiService.deleteReport(id);
+      set((state) => ({
+        reportsList: state.reportsList.filter((r) => r.id !== id),
+        selectedReportDetail: state.selectedReportDetail?.id === id ? null : state.selectedReportDetail
+      }));
+    } catch (e) {
+      console.error('Failed to delete report:', e);
+    }
+  },
+
+  generateAndSaveReport: async (payload?: any) => {
+    try {
+      const res = await apiService.generateReport();
+      await get().fetchReports();
+      return res.reportId || null;
+    } catch (e) {
+      console.error('Failed to generate and save report:', e);
+      return null;
+    }
+  },
 
   setMapEngine: (engine) => set({ mapEngine: engine }),
   setGoogleMapsApiKey: (key) => {
@@ -295,7 +428,6 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   },
   setIsGeneratingReport: (isGeneratingReport) => set({ isGeneratingReport }),
   setReportData: (reportData) => set({ reportData }),
-
   setFlightState: (partial) => set((state) => ({ 
     flightState: { ...state.flightState, ...partial } 
   })),
@@ -337,6 +469,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     get().fetchHeatmap('pm25');
     get().fetchLiveMapData();
     get().fetchReport();
+    get().fetchReports();
   },
 
   fetchDashboard: async () => {
@@ -411,6 +544,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
       set({ heatmapData: heatmap });
       await get().fetchDashboard();
       await get().fetchLiveMapData();
+      await get().fetchReports();
       get().resetWorkflow();
       return res;
     } catch (e) {

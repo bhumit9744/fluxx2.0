@@ -1,57 +1,81 @@
-import React, { useState } from 'react';
-import { CSVUploadCard } from '../../../components/reports/CSVUploadCard';
-import { ReportGenerator } from '../../../components/reports/ReportGenerator';
-import { ReportPreview } from '../../../components/reports/ReportPreview';
-import { ReportLibrary } from '../../../components/reports/ReportLibrary';
+import React, { useEffect, useState } from 'react';
+import { useEnvironmentStore, ReportItem } from '../../../stores/environmentStore';
+import { ReportsHeader } from './ReportsHeader';
+import { ReportsControls } from './ReportsControls';
+import { ReportCard } from './ReportCard';
+import { ReportsEmptyState } from './ReportsEmptyState';
+import { ReportPreviewModal } from './ReportPreviewModal';
+import { Loader2 } from 'lucide-react';
 
 export const ReportsView: React.FC = () => {
-  const [hasGenerated, setHasGenerated] = useState<boolean>(true);
+  const {
+    reportsList,
+    isReportsLoading,
+    fetchReports,
+    fetchReportById,
+    deleteReport,
+    selectedReportDetail,
+    setSelectedReportDetail,
+    isReportPreviewOpen,
+    setReportPreviewOpen
+  } = useEnvironmentStore();
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  const handleViewReport = async (report: ReportItem) => {
+    setSelectedReportDetail(report);
+    setReportPreviewOpen(true);
+    // Fetch full snapshot in background if needed
+    fetchReportById(report.id);
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    await deleteReport(id);
+  };
 
   return (
-    <div className="h-[calc(100vh-100px)] font-sans pb-4">
+    <div className="space-y-4 font-sans pb-12 select-none animate-in fade-in duration-200">
       
-      {/* 2-Column Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 h-full">
-        
-        {/* Left: Controls & Library */}
-        <div className="space-y-5 h-full flex flex-col overflow-y-auto pr-1">
-          {/* Header */}
-          <div className="flex items-center justify-between panel p-5 shrink-0">
-            <div>
-              <h2 className="text-xl font-bold text-[var(--fluxx-text)] tracking-tight">REPORTS</h2>
-              <div className="text-[11px] font-mono font-medium text-[var(--fluxx-muted)] mt-1 uppercase tracking-widest flex items-center space-x-2">
-                <span>Document Generation</span>
-              </div>
-            </div>
-          </div>
+      {/* 1. Header */}
+      <ReportsHeader />
 
-          <div>
-            <CSVUploadCard onSuccess={() => setHasGenerated(true)} />
-          </div>
+      {/* 2. Search, Filter, Sort Controls */}
+      <ReportsControls />
 
-          <div>
-            <ReportGenerator onGenerated={() => setHasGenerated(true)} />
-          </div>
-
-          <div className="flex-1">
-            <ReportLibrary />
+      {/* 3. Main Report List or Empty / Loading State */}
+      {isReportsLoading && reportsList.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-16 rounded-3xl bg-white/70 backdrop-blur-xl border border-[#F3E6D7]">
+          <Loader2 className="w-8 h-8 text-[#F47A24] animate-spin mb-3" />
+          <div className="text-xs font-mono text-[#8C827A] font-bold uppercase tracking-wider">
+            Loading Environmental Reports Archive...
           </div>
         </div>
-
-        {/* Right: A4 Preview */}
-        <div className="xl:col-span-2 relative bg-[rgba(255,255,255,0.2)] border border-[var(--fluxx-border)] rounded-2xl shadow-inner overflow-hidden flex flex-col items-center pt-8 overflow-y-auto h-full">
-          {hasGenerated ? (
-            <div className="w-[210mm] max-w-[95%] shrink-0 shadow-lg bg-white mb-8 rounded-sm overflow-hidden">
-              <ReportPreview />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-[var(--fluxx-muted)]">
-              Upload a dataset to preview the report.
-            </div>
-          )}
+      ) : reportsList.length === 0 ? (
+        <ReportsEmptyState />
+      ) : (
+        <div className="space-y-3">
+          {reportsList.map((report) => (
+            <ReportCard
+              key={report.id}
+              report={report}
+              onView={handleViewReport}
+              onDelete={handleDeleteReport}
+            />
+          ))}
         </div>
+      )}
 
-      </div>
+      {/* 4. A4 Report Dossier Preview Modal */}
+      <ReportPreviewModal
+        isOpen={isReportPreviewOpen}
+        onClose={() => {
+          setReportPreviewOpen(false);
+          setSelectedReportDetail(null);
+        }}
+        report={selectedReportDetail}
+      />
 
     </div>
   );

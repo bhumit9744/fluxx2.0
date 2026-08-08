@@ -98,7 +98,30 @@ export const apiService = {
     return res.json();
   },
 
-  getDownloadPdfUrl() {
-    return `${API_BASE}/reports/download`;
+  async getReports(params?: { search?: string; category?: string; sort_by?: string }) {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.category && params.category !== 'All') query.append('category', params.category);
+    if (params?.sort_by) query.append('sort_by', params.sort_by);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetch(`${API_BASE}/reports${qs}`);
+    if (!res.ok) throw new Error('Failed to fetch reports library');
+    return res.json();
+  },
+
+  async getReportById(id: string) {
+    const res = await fetch(`${API_BASE}/reports/${id}`);
+    if (!res.ok) throw new Error(`Failed to fetch report ${id}`);
+    return res.json();
+  },
+
+  async deleteReport(id: string) {
+    const res = await fetch(`${API_BASE}/reports/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Failed to delete report ${id}`);
+    return res.json();
+  },
+
+  getDownloadPdfUrl(reportId?: string) {
+    return reportId ? `${API_BASE}/reports/${reportId}/pdf` : `${API_BASE}/reports/download`;
   }
 };
