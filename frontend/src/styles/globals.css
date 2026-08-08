@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @import "./tokens.css";
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--fluxx-bg);
   color: var(--fluxx-text);
   margin: 0;
@@ -17,46 +17,32 @@ body {
 
 /* Base Abstract Background */
 .fluxx-background {
-  background:
-    radial-gradient(
-      circle at 10% 20%,
-      rgba(244,122,36,0.15),
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 90% 80%,
-      rgba(240,90,60,0.12),
-      transparent 40%
-    ),
-    var(--fluxx-bg);
-  background-size: cover;
-  background-attachment: fixed;
+  background: var(--fluxx-bg);
 }
 
-/* Main Dashboard Glass Shell */
+/* Main Dashboard Shell */
 .dashboard-shell {
-  background: var(--fluxx-glass);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border: 1px solid var(--fluxx-border);
-  box-shadow: var(--fluxx-shadow-glass);
-  border-radius: var(--fluxx-radius-lg);
+  background: var(--fluxx-bg);
 }
 
-/* Base Panel Styles for Cards (Glass) */
+/* Clean Solid White Cards with soft warm shadow & border */
 .panel {
-  background: var(--fluxx-glass-strong);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--fluxx-surface);
   border: 1px solid var(--fluxx-border);
-  border-radius: var(--fluxx-radius-md);
+  border-radius: var(--fluxx-radius-lg);
   box-shadow: var(--fluxx-shadow-card);
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .panel:hover {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: var(--fluxx-border-strong);
+  box-shadow: var(--fluxx-shadow-card);
+}
+
+/* Subtle Card */
+.panel-subtle {
+  background: var(--fluxx-bg-warm);
+  border: 1px solid var(--fluxx-border-light);
+  border-radius: var(--fluxx-radius-md);
 }
 
 /* A4 Fixed Ratio Container */
@@ -64,10 +50,10 @@ body {
   width: 210mm;
   min-height: 297mm;
   max-width: 100%;
-  background: white; /* Report stays solid white */
+  background: white;
 }
 
-/* Scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

@@ -3,7 +3,7 @@ import { GlassShell } from '../../layouts/GlassShell';
 import { Sidebar } from '../../components/navigation/Sidebar';
 import { TopBar } from '../../components/navigation/TopBar';
 import { OverviewView } from './Overview/OverviewView';
-import { EnvironmentView } from './Environment/EnvironmentView';
+import { AnalysePage } from './Analyse/AnalysePage';
 import { IntelligenceView } from './Intelligence/IntelligenceView';
 import { ReportsView } from './Reports/ReportsView';
 import { FlightOpsView } from './FlightOps/FlightOpsView';
@@ -41,9 +41,9 @@ export const DashboardLayout: React.FC = () => {
         <TopBar />
 
         {/* Dynamic Section Content */}
-        <main className="flex-1 overflow-y-auto px-4 md:px-6 py-5 space-y-5">
+        <main className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {activeSection === 'overview' && <OverviewView />}
-          {activeSection === 'environment' && <EnvironmentView />}
+          {activeSection === 'environment' && <AnalysePage />}
           {activeSection === 'flight-ops' && <FlightOpsView />}
           {activeSection === 'intelligence' && <IntelligenceView />}
           {activeSection === 'reports' && <ReportsView />}

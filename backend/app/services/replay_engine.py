@@ -19,6 +19,7 @@ class ReplayEngine:
         self.is_playing: bool = False
         self.speed: float = 1.0
         self.task: Optional[asyncio.Task] = None
+        self.active_filename: str = "kharghar_survey.csv"
         self._load_dataset()
 
     def _load_dataset(self):
@@ -60,6 +61,7 @@ class ReplayEngine:
         
         self.samples = new_samples
         self.current_idx = 0
+        self.active_filename = filename
         
         # Save to data directory for persistence
         save_path = os.path.join(os.path.dirname(settings.DATASET_PATH), "active_uploaded.csv")

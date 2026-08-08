@@ -1,6 +1,12 @@
 const API_BASE = 'http://localhost:8000/api';
 
 export const apiService = {
+  async getDashboardSummary() {
+    const res = await fetch(`${API_BASE}/dashboard`);
+    if (!res.ok) throw new Error('Failed to fetch dashboard summary');
+    return res.json();
+  },
+
   async getSamples() {
     const res = await fetch(`${API_BASE}/replay/samples`);
     if (!res.ok) throw new Error('Failed to fetch observations dataset');
@@ -31,6 +37,22 @@ export const apiService = {
   async getReportData() {
     const res = await fetch(`${API_BASE}/reports/data`);
     if (!res.ok) throw new Error('Failed to fetch report audit data');
+    return res.json();
+  },
+
+  async processDataset() {
+    const res = await fetch(`${API_BASE}/analysis/process`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to process and validate dataset');
+    return res.json();
+  },
+
+  async runAnalysis(parameter: string = 'pm25') {
+    const res = await fetch(`${API_BASE}/analysis/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parameter })
+    });
+    if (!res.ok) throw new Error('Failed to execute environmental analysis');
     return res.json();
   },
 

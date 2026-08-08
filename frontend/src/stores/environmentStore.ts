@@ -17,6 +17,7 @@ export type LayerType = 'pm25' | 'pm10' | 'co2' | 'temperature' | 'humidity' | '
 
 
 import { FlightState } from '../types/flight';
+import { calculateMetrics, getDefaultMetrics, DashboardMetrics } from '../utils/calculateMetrics';
 
 export interface EnvironmentState {
   appMode: AppMode;
@@ -41,6 +42,34 @@ export interface EnvironmentState {
   isGeneratingReport: boolean;
   reportData: AIAnalysisReport | null;
 
+  // Dashboard Unified State
+  dashboardData: DashboardMetrics;
+  timeFilter: '6H' | '12H' | '24H' | '7D' | '30D';
+  isUploadModalOpen: boolean;
+
+  // 3-Step Analysis Workflow State
+  workflow: {
+    currentStep: 'process' | 'analysis' | 'report' | 'complete';
+    processing: {
+      status: 'idle' | 'processing' | 'complete' | 'error';
+      progress: number;
+      details?: any;
+      error?: string;
+    };
+    analysis: {
+      status: 'idle' | 'processing' | 'complete' | 'error';
+      progress: number;
+      result?: any;
+      error?: string;
+    };
+    report: {
+      status: 'idle' | 'generating' | 'complete' | 'error';
+      progress: number;
+      url?: string;
+      reportData?: any;
+      error?: string;
+    };
+  };
 
   // Flight Ops Simulation State
   flightState: FlightState;
@@ -56,6 +85,15 @@ export interface EnvironmentState {
   setShowVTOL: (show: boolean) => void;
   setIs3DMode: (mode: boolean) => void;
   setPresentationMode: (mode: boolean) => void;
+  setTimeFilter: (filter: '6H' | '12H' | '24H' | '7D' | '30D') => void;
+  openUploadModal: () => void;
+  closeUploadModal: () => void;
+  setDashboardData: (data: DashboardMetrics) => void;
+  recalculateDashboard: () => void;
+
+  setWorkflowStep: (step: 'process' | 'analysis' | 'report' | 'complete') => void;
+  updateWorkflowState: (partial: Partial<EnvironmentState['workflow']>) => void;
+  resetWorkflow: () => void;
 
   setMapEngine: (engine: MapEngineType) => void;
   setGoogleMapsApiKey: (key: string) => void;
@@ -66,6 +104,7 @@ export interface EnvironmentState {
   
   // Async Methods
   initStore: () => void;
+  fetchDashboard: () => Promise<void>;
   fetchSamples: () => Promise<void>;
   fetchHeatmap: (layer?: LayerType, upto?: number) => Promise<void>;
   fetchReport: () => Promise<AIAnalysisReport | null>;
@@ -153,6 +192,34 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   isGeneratingReport: false,
   reportData: null,
 
+  // Dashboard Unified State
+  dashboardData: getDefaultMetrics('kharghar_dataset.csv'),
+  timeFilter: '24H',
+  isUploadModalOpen: false,
+
+  workflow: {
+    currentStep: 'process',
+    processing: {
+      status: 'idle',
+      progress: 0,
+      details: null,
+      error: undefined
+    },
+    analysis: {
+      status: 'idle',
+      progress: 0,
+      result: null,
+      error: undefined
+    },
+    report: {
+      status: 'idle',
+      progress: 0,
+      url: undefined,
+      reportData: null,
+      error: undefined
+    }
+  },
+
   flightState: {
     droneId: 'VTOL-001',
     status: 'READY',
@@ -186,6 +253,38 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   setShowVTOL: (show) => set({ showVTOL: show }),
   setIs3DMode: (mode) => set({ is3DMode: mode }),
   setPresentationMode: (mode) => set({ presentationMode: mode }),
+  setTimeFilter: (filter) => {
+    set({ timeFilter: filter });
+    get().recalculateDashboard();
+  },
+  openUploadModal: () => set({ isUploadModalOpen: true }),
+  closeUploadModal: () => set({ isUploadModalOpen: false }),
+  setDashboardData: (dashboardData) => set({ dashboardData }),
+  recalculateDashboard: () => {
+    const samples = get().allSamples;
+    const filename = get().replayStatus.source || 'kharghar_dataset.csv';
+    const filter = get().timeFilter;
+    const calculated = calculateMetrics(samples, filename, filter);
+    set({ dashboardData: calculated });
+  },
+
+  setWorkflowStep: (currentStep) => set((state) => ({
+    workflow: { ...state.workflow, currentStep }
+  })),
+
+  updateWorkflowState: (partial) => set((state) => ({
+    workflow: { ...state.workflow, ...partial }
+  })),
+
+  resetWorkflow: () => set({
+    workflow: {
+      currentStep: 'process',
+      processing: { status: 'idle', progress: 0, details: null },
+      analysis: { status: 'idle', progress: 0, result: null },
+      report: { status: 'idle', progress: 0, url: undefined, reportData: null }
+    }
+  }),
+
   setMapEngine: (engine) => set({ mapEngine: engine }),
   setGoogleMapsApiKey: (key) => {
     localStorage.setItem('fluxx_gmaps_key', key);
@@ -230,15 +329,30 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
       }
     });
 
+    get().fetchDashboard();
     get().fetchSamples();
     get().fetchHeatmap('pm25');
     get().fetchReport();
   },
 
+  fetchDashboard: async () => {
+    try {
+      const data = await apiService.getDashboardSummary();
+      if (data && data.metrics) {
+        set({ dashboardData: data });
+      }
+    } catch (e) {
+      console.warn('Failed to fetch dashboard summary, recalculating locally:', e);
+      get().recalculateDashboard();
+    }
+  },
+
   fetchSamples: async () => {
     try {
       const data = await apiService.getSamples();
-      set({ allSamples: data.samples || [] });
+      const samples = data.samples || [];
+      set({ allSamples: samples });
+      get().recalculateDashboard();
     } catch (e) {
       console.warn('Failed to fetch samples:', e);
     }
@@ -282,6 +396,8 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
       }
       const heatmap = await apiService.getHeatmap(get().selectedLayer, undefined, 24);
       set({ heatmapData: heatmap });
+      await get().fetchDashboard();
+      get().resetWorkflow();
       return res;
     } catch (e) {
       console.error('Failed to upload and ingest CSV:', e);
