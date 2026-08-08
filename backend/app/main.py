@@ -14,6 +14,7 @@ from app.api.ai import router as ai_router
 from app.api.reports import router as reports_router
 from app.api.dashboard import router as dashboard_router
 from app.api.analysis import router as analysis_router
+from app.api.map import router as map_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("fluxx.backend")
@@ -45,6 +46,7 @@ app.add_middleware(
 # Mount REST API Routers
 app.include_router(dashboard_router, prefix=settings.API_V1_STR)
 app.include_router(analysis_router, prefix=settings.API_V1_STR)
+app.include_router(map_router, prefix=settings.API_V1_STR)
 app.include_router(replay_router, prefix=settings.API_V1_STR)
 app.include_router(heatmap_router, prefix=settings.API_V1_STR)
 app.include_router(telemetry_router, prefix=settings.API_V1_STR)
@@ -54,6 +56,7 @@ app.include_router(reports_router, prefix=settings.API_V1_STR)
 # Also mount on /api direct routes for seamless compatibility
 app.include_router(dashboard_router, prefix="")
 app.include_router(analysis_router, prefix="")
+app.include_router(map_router, prefix="")
 app.include_router(replay_router, prefix="")
 app.include_router(heatmap_router, prefix="")
 app.include_router(telemetry_router, prefix="")

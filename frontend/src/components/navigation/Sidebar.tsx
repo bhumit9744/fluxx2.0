@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = () => {
     { id: 'overview' as PrimarySection, label: 'Dashboard', icon: Home },
     { id: 'environment' as PrimarySection, label: 'Analyse', icon: LayoutGrid },
     { id: 'reports' as PrimarySection, label: 'Reports', icon: FileText },
-    { id: 'flight-ops' as PrimarySection, label: 'Live Map', icon: MapPin },
+    { id: 'live-map' as PrimarySection, label: 'Live Map', icon: MapPin },
     { id: 'intelligence' as PrimarySection, label: 'Intelligence', icon: Sparkles },
     { id: 'flight-ops' as PrimarySection, label: 'Flight Control', icon: Plane }
   ];
@@ -52,19 +52,13 @@ export const Sidebar: React.FC<SidebarProps> = () => {
 
         {/* Navigation Menu */}
         <nav className="space-y-1.5 pt-2">
-          {navItems.map((item, index) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
-            // Differentiate between Live Map and Flight Control even if they share section
-            const isActive = index === 0 ? activeSection === 'overview' : 
-                             index === 1 ? activeSection === 'environment' : 
-                             index === 2 ? activeSection === 'reports' : 
-                             index === 3 ? activeSection === 'flight-ops' && item.label === 'Live Map' :
-                             index === 4 ? activeSection === 'intelligence' :
-                             activeSection === 'flight-ops' && item.label === 'Flight Control';
+            const isActive = activeSection === item.id || (item.id === 'environment' && activeSection === 'analyse');
 
             return (
               <button
-                key={`${item.id}-${item.label}`}
+                key={item.id}
                 onClick={() => setActiveSection(item.id)}
                 className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl transition-all duration-200 text-left cursor-pointer group font-medium text-[13.5px] ${
                   isActive

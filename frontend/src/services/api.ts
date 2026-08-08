@@ -28,6 +28,18 @@ export const apiService = {
     return res.json();
   },
 
+  async getMapData() {
+    const res = await fetch(`${API_BASE}/map/data`);
+    if (!res.ok) throw new Error('Failed to fetch live map data');
+    return res.json();
+  },
+
+  async getMapHeatmap(parameter: string = 'pm25') {
+    const res = await fetch(`${API_BASE}/map/heatmap?parameter=${parameter}`);
+    if (!res.ok) throw new Error('Failed to fetch parameter heatmap');
+    return res.json();
+  },
+
   async getAIAnalysis() {
     const res = await fetch(`${API_BASE}/ai/analysis`);
     if (!res.ok) throw new Error('Failed to fetch AI analysis');

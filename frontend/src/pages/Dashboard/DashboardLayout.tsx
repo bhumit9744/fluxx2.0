@@ -4,6 +4,7 @@ import { Sidebar } from '../../components/navigation/Sidebar';
 import { TopBar } from '../../components/navigation/TopBar';
 import { OverviewView } from './Overview/OverviewView';
 import { AnalysePage } from './Analyse/AnalysePage';
+import { LiveMapPage } from '../LiveMap/LiveMapPage';
 import { IntelligenceView } from './Intelligence/IntelligenceView';
 import { ReportsView } from './Reports/ReportsView';
 import { FlightOpsView } from './FlightOps/FlightOpsView';
@@ -28,6 +29,8 @@ export const DashboardLayout: React.FC = () => {
     setIsSettingsOpen(false);
   };
 
+  const isLiveMap = activeSection === 'live-map';
+
   return (
     <GlassShell>
       
@@ -41,13 +44,19 @@ export const DashboardLayout: React.FC = () => {
         <TopBar />
 
         {/* Dynamic Section Content */}
-        <main className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-          {activeSection === 'overview' && <OverviewView />}
-          {activeSection === 'environment' && <AnalysePage />}
-          {activeSection === 'flight-ops' && <FlightOpsView />}
-          {activeSection === 'intelligence' && <IntelligenceView />}
-          {activeSection === 'reports' && <ReportsView />}
-        </main>
+        {isLiveMap ? (
+          <main className="flex-1 overflow-hidden h-full flex flex-col">
+            <LiveMapPage />
+          </main>
+        ) : (
+          <main className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            {activeSection === 'overview' && <OverviewView />}
+            {(activeSection === 'environment' || activeSection === 'analyse') && <AnalysePage />}
+            {activeSection === 'flight-ops' && <FlightOpsView />}
+            {activeSection === 'intelligence' && <IntelligenceView />}
+            {activeSection === 'reports' && <ReportsView />}
+          </main>
+        )}
       </div>
 
       {/* 3. AI Copilot Drawer (Docked Right) */}

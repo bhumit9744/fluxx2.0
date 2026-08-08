@@ -11,7 +11,7 @@ import { replayService } from '../services/replay';
 import { wsClient } from '../services/websocket';
 
 export type AppMode = 'home' | 'login' | 'dashboard';
-export type PrimarySection = 'overview' | 'environment' | 'intelligence' | 'reports' | 'flight-ops';
+export type PrimarySection = 'overview' | 'environment' | 'analyse' | 'reports' | 'live-map' | 'intelligence' | 'flight-ops';
 export type MapEngineType = 'google_3d' | 'maplibre_twin';
 export type LayerType = 'pm25' | 'pm10' | 'co2' | 'temperature' | 'humidity' | 'windSpeed';
 
@@ -28,6 +28,7 @@ export interface EnvironmentState {
   replayStatus: ReplayStatus;
   eri: EnvironmentalRiskIndex;
   heatmapData: IDWHeatmapData | null;
+  liveMapData: any | null;
   selectedLayer: LayerType;
   showSensors: boolean;
   showHeatmap: boolean;
@@ -107,6 +108,7 @@ export interface EnvironmentState {
   fetchDashboard: () => Promise<void>;
   fetchSamples: () => Promise<void>;
   fetchHeatmap: (layer?: LayerType, upto?: number) => Promise<void>;
+  fetchLiveMapData: () => Promise<void>;
   fetchReport: () => Promise<AIAnalysisReport | null>;
   uploadAndIngestCSV: (file: File) => Promise<any>;
   startReplay: () => Promise<void>;
@@ -177,6 +179,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   replayStatus: defaultStatus,
   eri: defaultERI,
   heatmapData: null,
+  liveMapData: null,
   selectedLayer: 'pm25',
   showSensors: true,
   showHeatmap: true,
@@ -332,6 +335,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     get().fetchDashboard();
     get().fetchSamples();
     get().fetchHeatmap('pm25');
+    get().fetchLiveMapData();
     get().fetchReport();
   },
 
@@ -369,6 +373,15 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     }
   },
 
+  fetchLiveMapData: async () => {
+    try {
+      const data = await apiService.getMapData();
+      set({ liveMapData: data });
+    } catch (e) {
+      console.warn('Failed to fetch live map data:', e);
+    }
+  },
+
   fetchReport: async () => {
     try {
       const data = await apiService.getReportData();
@@ -386,7 +399,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
       if (res.report) {
         set({ reportData: res.report });
       }
-      // Re-fetch samples and heatmap with the new dataset
+      // Re-fetch samples, heatmap and map data with the new dataset
       const samplesRes = await apiService.getSamples();
       if (samplesRes.samples && samplesRes.samples.length > 0) {
         set({
@@ -397,6 +410,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
       const heatmap = await apiService.getHeatmap(get().selectedLayer, undefined, 24);
       set({ heatmapData: heatmap });
       await get().fetchDashboard();
+      await get().fetchLiveMapData();
       get().resetWorkflow();
       return res;
     } catch (e) {
