@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fluxx Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        
+        /* Pure Black Background */
+        --bg-base: #000000; 
+        
+        /* Bright Neon Colors */
+        --neon-blue: #00f3ff;
+        --neon-pink: #ff00ff;
+        --neon-green: #39ff14;
+        
+        /* Glowing Neomorphic Shadows for Pure Black */
+        --neo-shadow: 
+          0 0 15px rgba(0, 243, 255, 0.15), 
+          inset 0 0 15px rgba(0, 243, 255, 0.05);
+          
+        --neo-shadow-pink: 
+          0 0 15px rgba(255, 0, 255, 0.15), 
+          inset 0 0 15px rgba(255, 0, 255, 0.05);
+          
+        --neo-shadow-inset: 
+          inset 0 0 20px rgba(0, 243, 255, 0.3);
+          
+        --glass-border: rgba(0, 243, 255, 0.3);
+        --glass-border-pink: rgba(255, 0, 255, 0.3);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg-base);
+        color: #e2e8f0;
+      }
+
+      body::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      body::-webkit-scrollbar-thumb {
+        background: var(--neon-blue);
+        border-radius: 999px;
+        box-shadow: 0 0 10px var(--neon-blue);
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .page {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        min-height: 100vh;
+        gap: 24px;
+        padding: 24px;
+      }
+
+      /* NEON NEOMORPHIC PANELS */
+      .sidebar,
+      .glass-panel,
+      .report-card,
+      .setting-card,
+      .feature-card,
+      .control-card,
+      .small-kpi,
+      .sector-block,
+      .checklist-item,
+      .prop-list li,
+      .glass-input,
+      .glass-select,
+      .status-card,
+      .mini-chart,
+      .map-fullscreen,
+      .chart-placeholder,
+      .detail-visual,
+      .card-preview,
+      .upload-area,
+      .chip,
+      .switch {
+        background: var(--bg-base);
+        border-radius: 32px;
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--neo-shadow);
+        transition: all 0.3s ease;
+      }
+
+      .sidebar {
+        padding: 34px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-mark {
+        width: 46px;
+        height: 46px;
+        border-radius: 18px;
+        background: var(--bg-base);
+        display: grid;
+        place-items: center;
+        color: var(--neon-pink);
+        font-weight: 900;
+        box-shadow: var(--neo-shadow-pink);
+        border: 1px solid var(--glass-border-pink);
+        text-shadow: 0 0 15px var(--neon-pink);
+      }
+
+      .brand-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .brand-text h1 {
+        margin: 0;
+        font-size: 1.4rem;
+        letter-spacing: -0.04em;
+        color: var(--neon-blue);
+        text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+      }
+
+      .brand-text p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+
+      .nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 16px 18px;
+        border-radius: 22px;
+        color: #94a3b8;
+        text-align: left;
+        background: var(--bg-base);
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: none;
+      }
+
+      .nav-item:hover {
+        color: var(--neon-blue);
+        box-shadow: var(--neo-shadow);
+        border: 1px solid var(--glass-border);
+        text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+      }
+
+      .nav-item.active {
+        box-shadow: var(--neo-shadow-inset);
+        color: var(--neon-blue);
+        border: 1px solid var(--glass-border);
+        text-shadow: 0 0 12px var(--neon-blue);
+      }
+
+      .nav-icon {
+        width: 18px;
+        height: 18px;
+        display: grid;
+        place-items: center;
+        filter: grayscale(100%) brightness(150%);
+      }
+
+      .nav-item:hover .nav-icon,
+      .nav-item.active .nav-icon {
+        filter: none;
+        drop-shadow: 0 0 5px var(--neon-blue);
+      }
+
+      .status-card {
+        padding: 18px 20px;
+        border-radius: 24px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .status-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #94a3b8;
+      }
+
+      .status-chip {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--bg-base);
+        color: var(--neon-green);
+        font-size: 0.82rem;
+        font-weight: 700;
+        box-shadow: 0 0 10px rgba(57, 255, 20, 0.2), inset 0 0 10px rgba(57, 255, 20, 0.1);
+        border: 1px solid rgba(57, 255, 20, 0.4);
+        text-shadow: 0 0 8px var(--neon-green);
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--glass-border);
+        color: #64748b;
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+
+      .content {
+        display: grid;
+        gap: 22px;
+      }
+
+      .page-panel {
+        display: none;
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 0.35s ease, transform 0.35s ease;
+      }
+
+      .page-panel.active {
+        display: grid;
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .glass-panel {
+        padding: 28px;
+      }
+
+      .page-title {
+        margin: 0;
+        font-size: 2rem;
+        letter-spacing: -0.03em;
+        color: var(--neon-blue);
+        text-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
+      }
+
+      .page-subtitle {
+        margin: 12px 0 0;
+        color: #94a3b8;
+        line-height: 1.75;
+      }
+
+      .section-row,
+      .tile-grid,
+      .info-grid,
+      .button-grid {
+        display: grid;
+        gap: 24px;
+      }
+
+      .section-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .section-row.cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .section-row.cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .tile-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .tile-grid.cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hero-line,
+      .section-headline,
+      .status-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .hero-line strong,
+      .section-headline strong {
+        font-size: 1.2rem;
+        color: var(--neon-blue);
+        text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+      }
+
+      .map-fullscreen,
+      .chart-placeholder,
+      .detail-visual,
+      .card-preview {
+        box-shadow: var(--neo-shadow-inset);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .upload-area {
+        border: none;
+        box-shadow: var(--neo-shadow-inset);
+        display: grid;
+        place-items: center;
+        padding: 52px 28px;
+        gap: 18px;
+        text-align: center;
+      }
+
+      .upload-area p {
+        margin: 0;
+        color: var(--neon-blue);
+        text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+      }
+
+      .upload-area p:first-child {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--neon-pink);
+        text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+      }
+
+      .upload-area input {
+        display: none;
+      }
+
+      .upload-button,
+      .action-button,
+      .toggle-button {
+        border: 1px solid var(--glass-border-pink);
+        border-radius: 999px;
+        padding: 14px 26px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--neon-pink);
+        background: var(--bg-base);
+        box-shadow: var(--neo-shadow-pink);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 0 0 8px var(--neon-pink);
+      }
+
+      .upload-button:hover,
+      .action-button:hover,
+      .toggle-button:hover {
+        box-shadow: 0 0 25px rgba(255, 0, 255, 0.4), inset 0 0 10px rgba(255, 0, 255, 0.2);
+        color: #fff;
+      }
+      
+      .upload-button:active,
+      .action-button:active,
+      .toggle-button:active {
+        box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.5);
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+
+      .chip {
+        padding: 10px 16px;
+        font-size: 0.86rem;
+        color: var(--neon-blue);
+        box-shadow: var(--neo-shadow-inset);
+        text-shadow: 0 0 5px rgba(0, 243, 255, 0.4);
+      }
+
+      .small-kpi {
+        padding: 18px;
+        gap: 6px;
+      }
+      
+      .small-kpi:hover {
+        border-color: var(--neon-blue);
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), var(--neo-shadow);
+      }
+
+      .small-kpi strong {
+        font-size: 1.6rem;
+        color: var(--neon-blue);
+        text-shadow: 0 0 15px rgba(0, 243, 255, 0.8);
+      }
+
+      .small-kpi span {
+        color: #94a3b8;
+      }
+
+      .glow-card {
+        background: var(--bg-base);
+        border-radius: 32px;
+        padding: 24px;
+        border: 1px solid var(--glass-border-pink);
+        box-shadow: var(--neo-shadow-pink);
+      }
+
+      .checklist {
+        display: grid;
+        gap: 16px;
+      }
+
+      .checklist-item {
+        padding: 16px 18px;
+        gap: 14px;
+      }
+
+      .checklist-item span {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: var(--bg-base);
+        box-shadow: var(--neo-shadow-inset);
+        border: 2px solid var(--neon-pink);
+        box-shadow: 0 0 10px var(--neon-pink);
+      }
+
+      .feature-card h3,
+      .report-card strong,
+      .setting-card h2,
+      .control-card h2,
+      .sector-block strong,
+      .info-tile strong {
+        margin: 0 0 10px;
+        font-size: 1rem;
+        color: var(--neon-blue);
+        text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
+      }
+
+      .feature-card p,
+      .report-card small,
+      .setting-card p,
+      .sector-block p,
+      .info-tile small {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+
+      .prop-list {
+        gap: 16px;
+      }
+
+      .prop-list li {
+        padding: 16px 18px;
+        color: var(--neon-blue);
+        text-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+      }
+
+      .prop-list li::before {
+        content: '✔';
+        color: var(--neon-pink);
+        font-size: 0.9rem;
+        text-shadow: 0 0 10px var(--neon-pink);
+      }
+
+      .status-pill-strong {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: var(--bg-base);
+        color: var(--neon-pink);
+        font-weight: 700;
+        box-shadow: var(--neo-shadow-inset);
+        border: 1px solid rgba(255, 0, 255, 0.3);
+        text-shadow: 0 0 10px var(--neon-pink);
+      }
+
+      .sector-block {
+        padding: 22px;
+      }
+
+      .sector-row {
+        gap: 12px;
+      }
+
+      .mini-chart {
+        height: 140px;
+        box-shadow: var(--neo-shadow-inset);
+      }
+
+      .control-ring {
+        width: 100px;
+        height: 100px;
+        border-radius: 999px;
+        background: var(--bg-base);
+        display: grid;
+        place-items: center;
+        box-shadow: var(--neo-shadow);
+        position: relative;
+        border: 1px solid var(--glass-border);
+      }
+      
+      .control-ring::before {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border-radius: 999px;
+        box-shadow: var(--neo-shadow-inset);
+        border: 2px solid transparent;
+        border-top-color: var(--neon-pink);
+        transform: rotate(45deg);
+      }
+
+      .control-ring strong {
+        font-size: 1rem;
+        color: var(--neon-blue);
+        z-index: 2;
+        text-shadow: 0 0 10px var(--neon-blue);
+      }
+
+      .button-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+
+      .glass-input,
+      .glass-select {
+        padding: 14px 18px;
+        box-shadow: var(--neo-shadow-inset);
+        color: var(--neon-blue);
+      }
+      
+      .glass-input:focus,
+      .glass-select:focus {
+        outline: none;
+        box-shadow: var(--neo-shadow-inset), 0 0 15px rgba(255, 0, 255, 0.3);
+        border-color: var(--neon-pink);
+      }
+
+      .switch {
+        width: 52px;
+        height: 28px;
+        box-shadow: var(--neo-shadow-inset);
+        cursor: pointer;
+      }
+
+      .switch::after {
+        content: '';
+        position: absolute;
+        inset: 4px auto 4px 4px;
+        width: 20px;
+        border-radius: 999px;
+        background: var(--bg-base);
+        box-shadow: var(--neo-shadow);
+        border: 1px solid var(--glass-border);
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+      }
+
+      .switch.active {
+        box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.2);
+      }
+
+      .switch.active::after {
+        transform: translateX(24px);
+        box-shadow: var(--neo-shadow), 0 0 10px var(--neon-blue);
+        border-color: var(--neon-blue);
+      }
+
+      .label-inline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        color: var(--neon-blue);
+        text-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+      }
+
+      .section-headline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .section-headline span {
+        color: var(--neon-pink);
+        font-size: 0.95rem;
+        text-shadow: 0 0 8px rgba(255, 0, 255, 0.5);
+      }
+
+      @media (max-width: 1180px) {
+        .page {
+          grid-template-columns: 1fr;
+        }
+
+        .section-row,
+        .tile-grid,
+        .info-grid,
+        .button-grid,
+        .section-row.cols-2,
+        .section-row.cols-3,
+        .section-row.cols-4 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          padding: 18px;
+        }
+
+        .sidebar {
+          padding: 24px 18px;
+        }
+
+        .page-title {
+          font-size: 1.6rem;
+        }
+
+        .nav-item {
+          padding: 14px 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">F</div>
+          <div class="brand-text">
+            <h1>Fluxx</h1>
+            <p>Autonomous Environmental Intelligence Platform</p>
+          </div>
+        </div>
+
+        <ul class="nav-list">
+          <li><button class="nav-item active" data-page="mission-center"><span class="nav-icon">🏠</span>Mission Center</button></li>
+          <li><button class="nav-item" data-page="analyze"><span class="nav-icon">📤</span>Analyze</button></li>
+          <li><button class="nav-item" data-page="intelligence"><span class="nav-icon">🧠</span>Intelligence</button></li>
+          <li><button class="nav-item" data-page="live-maps"><span class="nav-icon">🗺️</span>Live Maps</button></li>
+          <li><button class="nav-item" data-page="reports"><span class="nav-icon">📑</span>Reports</button></li>
+          <li><button class="nav-item" data-page="hardware"><span class="nav-icon">✈️</span>Hardware Control</button></li>
+          <li><button class="nav-item" data-page="settings"><span class="nav-icon">⚙️</span>Settings</button></li>
+        </ul>
+
+        <div class="status-card">
+          <div class="status-label">
+            <span>System Status</span>
+            <span class="status-chip">Online</span>
+          </div>
+          <p style="margin:0; font-size:0.95rem; color:#334155;">Fluxx v2.4.0 • © 2025 Fluxx Inc.</p>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="page-panel active" id="mission-center">
+          <div class="glass-panel">
+            <h1 class="page-title">Mission Center</h1>
+            <p class="page-subtitle">A premium command hub built for flight operations, environmental intelligence, and mission orchestration.</p>
+            <div class="section-row cols-3" style="margin-top:24px;">
+              <div class="small-kpi"><strong>14</strong><span>Live Missions</span></div>
+              <div class="small-kpi"><strong>1,204</strong><span>Sensors Active</span></div>
+              <div class="small-kpi"><strong>98.2%</strong><span>AI Confidence</span></div>
+            </div>
+          </div>
+
+          <div class="section-row" style="margin-top:24px;">
+            <div class="glass-panel">
+              <div class="section-headline"><strong>Live Air Quality Overview</strong><span>Sector 4 hotspot</span></div>
+              <div class="map-fullscreen" style="margin-top:20px;"></div>
+            </div>
+            <div class="glass-panel">
+              <div class="section-headline"><strong>Monthly Intelligence Pulse</strong><span>Updated 3m ago</span></div>
+              <div class="tile-grid cols-2" style="margin-top:18px;">
+                <div class="small-kpi"><strong>42</strong><span>Average AQI</span></div>
+                <div class="small-kpi"><strong>4.2M</strong><span>Total Readings</span></div>
+                <div class="small-kpi"><strong>98%</strong><span>Sensor Uptime</span></div>
+                <div class="small-kpi"><strong>+18%</strong><span>Coverage Growth</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-panel" id="analyze">
+          <div class="glass-panel">
+            <h1 class="page-title">Analyze Mission Data</h1>
+            <p class="page-subtitle">Transform uploaded CSV flight logs into AI intelligence, validation checks, and environmental insights.</p>
+            <div class="upload-area" id="upload-area">
+              <p>Upload Mission CSV</p>
+              <p>Drag &amp; Drop or Browse Files</p>
+              <p class="chip-row"><span class="chip">Supported format: CSV</span></p>
+              <label class="upload-button" for="file-input">Browse files</label>
+              <input type="file" id="file-input" accept=".csv" />
+            </div>
+            <div class="chip-row" style="margin-top:16px;">
+              <span class="chip">Recent upload: Sector 4 Mission</span>
+              <span class="chip">Recent upload: 2025-05-18</span>
+            </div>
+          </div>
+
+          <div class="section-row cols-2">
+            <div class="glass-panel">
+              <div class="section-headline"><strong>Mission Summary</strong><span>Status: Complete</span></div>
+              <div class="info-grid" style="margin-top:20px;">
+                <div class="info-tile"><strong>FLX-204</strong><small>Mission ID</small></div>
+                <div class="info-tile"><strong>May 18, 2025</strong><small>Mission Date</small></div>
+                <div class="info-tile"><strong>42m</strong><small>Flight Duration</small></div>
+                <div class="info-tile"><strong>12.8 km²</strong><small>Coverage Area</small></div>
+                <div class="info-tile"><strong>18.4 km</strong><small>Distance Covered</small></div>
+                <div class="info-tile"><strong>1,820 m</strong><small>Max Altitude</small></div>
+                <div class="info-tile"><strong>41 km/h</strong><small>Average Speed</small></div>
+                <div class="info-tile"><strong>Complete</strong><small>Mission Status</small></div>
+              </div>
+            </div>
+            <div class="glass-panel">
+              <div class="section-headline"><strong>Environmental Summary</strong><span>AI KPIs</span></div>
+              <div class="tile-grid cols-2" style="margin-top:20px;">
+                <div class="small-kpi"><strong>42</strong><span>Average AQI</span></div>
+                <div class="small-kpi"><strong>12.4</strong><span>Average PM2.5</span></div>
+                <div class="small-kpi"><strong>29</strong><span>Average PM10</span></div>
+                <div class="small-kpi"><strong>365 ppm</strong><span>CO₂</span></div>
+                <div class="small-kpi"><strong>22.4°C</strong><span>Temperature</span></div>
+                <div class="small-kpi"><strong>58%</strong><span>Humidity</span></div>
+                <div class="small-kpi"><strong>1012 hPa</strong><span>Pressure</span></div>
+                <div class="small-kpi"><strong>28,400</strong><span>Total Readings</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-row cols-2">
+            <div class="glass-panel">
+              <div class="section-headline"><strong>Sensor Validation</strong><span>Dataset health check</span></div>
+              <ul class="prop-list" style="margin-top:18px;">
+                <li>GPS</li>
+                <li>PM2.5</li>
+                <li>PM10</li>
+                <li>CO₂</li>
+                <li>Temperature</li>
+                <li>Humidity</li>
+                <li>Pressure</li>
+                <li>Altitude</li>
+                <li>Timestamp</li>
+                <li>Missing Values</li>
+                <li>Duplicate Values</li>
+                <li>Outlier Detection</li>
+                <li>Overall Dataset Health</li>
+              </ul>
+            </div>
+            <div class="glass-panel">
+              <div class="section-headline"><strong>Mission Preview</strong><span>Interactive route</span></div>
+              <div class="map-fullscreen" style="margin-top:18px;"></div>
+              <div class="chip-row" style="margin-top:16px;">
+                <span class="chip">Mini heatmap</span>
+                <span class="chip">Sensor route</span>
+                <span class="chip">Coverage boundary</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <div class="section-headline"><strong>Generate AI Analysis</strong><button class="action-button" id="generate-ai">Generate AI Analysis</button></div>
+          </div>
+
+          <div class="glass-panel" id="ai-insights" style="display:none;">
+            <h2>AI Insight Cards</h2>
+            <div class="section-row cols-3" style="margin-top:20px;">
+              <div class="feature-card"><h3>Executive Summary</h3><p>Mission FLX-204 shows particulate pressure in the eastern corridor with a rapid afternoon spike.</p></div>
+              <div class="feature-card"><h3>Pollution Hotspots</h3><p>Sector 4, Riverside, and Sector 9 are the most impacted areas.</p></div>
+              <div class="feature-card"><h3>Environmental Risk</h3><p>Score: 8.7 / 10 — elevated population risk.</p></div>
+            </div>
+            <div class="section-row cols-2" style="margin-top:20px;">
+              <div class="feature-card"><h3>Major Findings</h3><p>PM2.5 peaks align with evening wind shifts and traffic emissions.</p></div>
+              <div class="feature-card"><h3>Detected Anomalies</h3><p>Altitude drift and timestamp jitter detected during second mission segment.</p></div>
+            </div>
+            <div class="section-row cols-3" style="margin-top:20px;">
+              <div class="feature-card"><h3>Air Quality</h3><p>Classification: Moderate to Unhealthy for sensitive groups.</p></div>
+              <div class="feature-card"><h3>Confidence</h3><p>Prediction Confidence: 94%</p></div>
+              <div class="feature-card"><h3>Recommendations</h3><p>Run a follow-up dawn mission and monitor schools downwind.</p></div>
+            </div>
+            <div class="button-grid" style="margin-top:24px;">
+              <button class="action-button">Generate Report</button>
+              <button class="action-button">Download PDF</button>
+              <button class="action-button">Open Live Map</button>
+              <button class="action-button">Compare Mission</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-panel" id="intelligence">
+          <div class="glass-panel">
+            <h1 class="page-title">Intelligence</h1>
+            <p class="page-subtitle">AI-generated environmental intelligence that turns mission measurements into decision-ready insights.</p>
+            <div class="hero-line" style="margin-top:22px;"><strong>Mission FLX-204 indicates elevated particulate concentration within Sector 4 with abnormal PM2.5 peaks during afternoon hours...</strong></div>
+          </div>
+
+          <div class="section-row cols-3">
+            <div class="sector-block">
+              <div class="sector-row"><strong>Sector 4</strong><span class="status-pill-strong">Critical</span></div>
+              <p>AQI 172 • Main pollutant PM2.5</p>
+            </div>
+            <div class="sector-block">
+              <div class="sector-row"><strong>Sector 7</strong><span class="status-pill-strong">High</span></div>
+              <p>AQI 140 • Main pollutant CO₂</p>
+            </div>
+            <div class="sector-block">
+              <div class="sector-row"><strong>Sector 2</strong><span class="status-pill-strong">Moderate</span></div>
+              <p>AQI 96 • Main pollutant PM10</p>
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <div class="section-headline"><strong>Historical Comparison</strong><span>Today • Yesterday • Last Week • Last Month • Previous Mission</span></div>
+            <div class="chart-placeholder" style="margin-top:20px;"></div>
+          </div>
+
+          <div class="section-row cols-2">
+            <div class="glass-panel">
+              <h2>Prediction Engine</h2>
+              <div class="info-grid" style="margin-top:18px;">
+                <div class="small-kpi"><strong>89</strong><span>Expected AQI</span></div>
+                <div class="small-kpi"><strong>14.2</strong><span>Expected PM2.5</span></div>
+                <div class="small-kpi"><strong>33</strong><span>Expected PM10</span></div>
+                <div class="small-kpi"><strong>4</strong><span>Predicted Risk Zones</span></div>
+              </div>
+              <div class="mini-chart" style="margin-top:18px;"></div>
+            </div>
+            <div class="glass-panel">
+              <h2>Recommendation Engine</h2>
+              <ul class="prop-list" style="margin-top:18px;">
+                <li>Increase monitoring in Sector 4</li>
+                <li>Deploy another mission tomorrow morning</li>
+                <li>Investigate industrial emissions</li>
+                <li>Monitor schools nearby</li>
+                <li>Wind conditions expected to improve air quality</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <div class="section-headline"><strong>Environmental Intelligence Score</strong><span>City health index</span></div>
+            <div class="chart-placeholder" style="margin-top:20px; min-height:260px;"></div>
+          </div>
+        </section>
+
+        <section class="page-panel" id="live-maps">
+          <div class="glass-panel">
+            <h1 class="page-title">Live Maps</h1>
+            <p class="page-subtitle">Premium interactive mapping designed for environmental telemetry, layered mission data, and playback controls.</p>
+          </div>
+          <div class="glass-panel map-fullscreen"></div>
+          <div class="section-row cols-4" style="margin-top:18px;">
+            <div class="small-kpi"><strong>Layers</strong><span>AQI, PM2.5, PM10, CO₂, Temp, Humidity, Pressure, Altitude</span></div>
+            <div class="small-kpi"><strong>Playback</strong><span>Mission route animation</span></div>
+            <div class="small-kpi"><strong>Themes</strong><span>Heatmap, Satellite, Street, Dark</span></div>
+            <div class="small-kpi"><strong>Hover</strong><span>Sensor readings on hover</span></div>
+          </div>
+        </section>
+
+        <section class="page-panel" id="reports">
+          <div class="glass-panel">
+            <h1 class="page-title">Reports</h1>
+            <p class="page-subtitle">Premium document gallery for mission summaries, intelligence reports, and predictive analytics exports.</p>
+          </div>
+          <div class="section-row cols-3">
+            <div class="report-card">
+              <strong>Environmental Report</strong>
+              <small>May 18, 2025</small>
+              <div class="card-preview" style="margin-top:16px;"></div>
+              <div class="button-grid" style="margin-top:18px;">
+                <button class="action-button">Preview</button>
+                <button class="action-button">Download PDF</button>
+              </div>
+            </div>
+            <div class="report-card">
+              <strong>Mission Report</strong>
+              <small>FLX-204 • Completed</small>
+              <div class="card-preview" style="margin-top:16px;"></div>
+              <div class="button-grid" style="margin-top:18px;">
+                <button class="action-button">Preview</button>
+                <button class="action-button">Share</button>
+              </div>
+            </div>
+            <div class="report-card">
+              <strong>AI Intelligence Report</strong>
+              <small>Prediction Analysis</small>
+              <div class="card-preview" style="margin-top:16px;"></div>
+              <div class="button-grid" style="margin-top:18px;">
+                <button class="action-button">Generate Again</button>
+                <button class="action-button">Download PDF</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-panel" id="hardware">
+          <div class="glass-panel">
+            <h1 class="page-title">Hardware Control</h1>
+            <p class="page-subtitle">Mission control inspired by aerospace systems, with premium telemetry, diagnostics, and flight safety operations.</p>
+          </div>
+          <div class="section-row">
+            <div class="glass-panel">
+              <div class="section-headline"><strong>VTOL Visualization</strong><span>Premium flight model</span></div>
+              <div class="map-fullscreen" style="margin-top:20px; min-height:420px;"></div>
+            </div>
+            <div class="glass-panel">
+              <div class="section-headline"><strong>Circular Systems</strong><span>Health summary</span></div>
+              <div class="section-row cols-2" style="margin-top:18px;">
+                <div class="control-card"><div class="control-ring"><strong>Battery</strong></div></div>
+                <div class="control-card"><div class="control-ring"><strong>GPS</strong></div></div>
+                <div class="control-card"><div class="control-ring"><strong>Signal</strong></div></div>
+                <div class="control-card"><div class="control-ring"><strong>Temp</strong></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-row cols-2" style="margin-top:18px;">
+            <div class="glass-panel">
+              <h2>Mission Controls</h2>
+              <div class="button-grid" style="margin-top:18px;">
+                <button class="action-button">Start Mission</button>
+                <button class="action-button">Pause</button>
+                <button class="action-button">Resume</button>
+                <button class="action-button">Return Home</button>
+              </div>
+              <div class="button-grid" style="margin-top:14px;">
+                <button class="action-button">Emergency Stop</button>
+                <button class="action-button">Calibrate Sensors</button>
+                <button class="action-button">Run Diagnostics</button>
+                <button class="action-button">Export Logs</button>
+              </div>
+            </div>
+            <div class="glass-panel">
+              <h2>Diagnostics</h2>
+              <div class="section-row cols-2" style="margin-top:18px;">
+                <div class="small-kpi"><strong>93%</strong><span>Battery Health</span></div>
+                <div class="small-kpi"><strong>98%</strong><span>Motor Health</span></div>
+                <div class="small-kpi"><strong>1.8 m</strong><span>GPS Accuracy</span></div>
+                <div class="small-kpi"><strong>82%</strong><span>Storage Used</span></div>
+                <div class="small-kpi"><strong>41%</strong><span>CPU</span></div>
+                <div class="small-kpi"><strong>43°C</strong><span>Board Temp</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-row cols-2" style="margin-top:18px;">
+            <div class="glass-panel">
+              <h2>Live Telemetry</h2>
+              <div class="chart-placeholder"></div>
+            </div>
+            <div class="glass-panel">
+              <h2>Mission Timeline</h2>
+              <div class="chart-placeholder" style="min-height:300px;"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-panel" id="settings">
+          <div class="glass-panel">
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Organize general, hardware, AI, and security settings with clean glass sections.</p>
+          </div>
+
+          <div class="section-row cols-2">
+            <div class="setting-card">
+              <h2>General</h2>
+              <div class="section-row" style="margin-top:18px;">
+                <div class="label-inline"><span>Auto mission sync</span><div class="switch active"></div></div>
+                <div class="label-inline"><span>Ambient lighting</span><div class="switch"></div></div>
+                <select class="glass-select"><option>Theme: Soft Blue</option></select>
+              </div>
+            </div>
+            <div class="setting-card">
+              <h2>Account</h2>
+              <div class="section-row" style="margin-top:18px; gap:14px;">
+                <input class="glass-input" value="pilot@fluxx.ai" readonly />
+                <input class="glass-input" value="Avery Raven" readonly />
+                <div class="label-inline"><span>Secure login</span><div class="switch active"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-row cols-2" style="margin-top:18px;">
+            <div class="setting-card">
+              <h2>Mission Defaults</h2>
+              <div class="section-row" style="margin-top:18px; gap:14px;">
+                <select class="glass-select"><option>Automatic upload</option></select>
+                <select class="glass-select"><option>CSV mission format</option></select>
+                <input class="glass-input" value="Default altitude: 1200 m" readonly />
+              </div>
+            </div>
+            <div class="setting-card">
+              <h2>Hardware</h2>
+              <div class="section-row" style="margin-top:18px; gap:14px;">
+                <select class="glass-select"><option>Calibration schedule</option></select>
+                <input class="glass-input" value="Sensor auto-checks enabled" readonly />
+                <div class="label-inline"><span>Firmware auto-update</span><div class="switch active"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-row cols-2" style="margin-top:18px;">
+            <div class="setting-card">
+              <h2>AI Configuration</h2>
+              <div class="section-row" style="margin-top:18px; gap:14px;">
+                <div class="label-inline"><span>Insight depth</span><div class="switch active"></div></div>
+                <div class="label-inline"><span>Risk alert mode</span><div class="switch active"></div></div>
+                <select class="glass-select"><option>Prediction horizon: 24h</option></select>
+              </div>
+            </div>
+            <div class="setting-card">
+              <h2>Notifications</h2>
+              <div class="section-row" style="margin-top:18px; gap:14px;">
+                <div class="label-inline"><span>Email alerts</span><div class="switch active"></div></div>
+                <div class="label-inline"><span>SMS alerts</span><div class="switch"></div></div>
+                <div class="label-inline"><span>Mission banner</span><div class="switch active"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-row cols-2" style="margin-top:18px;">
+            <div class="setting-card">
+              <h2>Appearance</h2>
+              <div class="section-row" style="margin-top:18px; gap:14px;">
+                <select class="glass-select"><option>Soft blue ambient lighting</option></select>
+                <select class="glass-select"><option>Apple-inspired palette</option></select>
+              </div>
+            </div>
+            <div class="setting-card" style="background: rgba(254, 244, 244, 0.95); border-color: rgba(248, 113, 113, 0.2);">
+              <h2 style="color:#b91c1c;">Danger Zone</h2>
+              <p style="margin:0 0 18px; color:#7f1d1d;">Reset system state, clear cached mission analytics, or revoke active keys.</p>
+              <button class="action-button" style="background:#ef4444;">Reset Platform</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const pages = document.querySelectorAll('.page-panel');
+      const navItems = document.querySelectorAll('.nav-item');
+      const fileInput = document.getElementById('file-input');
+      const uploadArea = document.getElementById('upload-area');
+      const aiInsights = document.getElementById('ai-insights');
+      const generateAi = document.getElementById('generate-ai');
+
+      const switchPage = (pageId) => {
+        pages.forEach((panel) => {
+          panel.classList.toggle('active', panel.id === pageId);
+        });
+        navItems.forEach((button) => {
+          button.classList.toggle('active', button.dataset.page === pageId);
+        });
+      };
+
+      navItems.forEach((button) => {
+        button.addEventListener('click', () => switchPage(button.dataset.page));
+      });
+
+      const highlightUpload = (active) => {
+        uploadArea.style.borderColor = active ? 'rgba(37, 99, 235, 0.6)' : 'rgba(37, 99, 235, 0.28)';
+      };
+
+      uploadArea.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        highlightUpload(true);
+      });
+
+      uploadArea.addEventListener('dragleave', () => {
+        highlightUpload(false);
+      });
+
+      uploadArea.addEventListener('drop', (event) => {
+        event.preventDefault();
+        highlightUpload(false);
+        const files = event.dataTransfer.files;
+        if (files.length) {
+          fileInput.files = files;
+          aiInsights.style.display = 'none';
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        aiInsights.style.display = 'none';
+      });
+
+      if (generateAi) {
+        generateAi.addEventListener('click', () => {
+          aiInsights.style.display = 'grid';
+          aiInsights.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+    </script>
+  </body>
+</html>

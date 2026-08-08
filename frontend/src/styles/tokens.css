@@ -1,0 +1,30 @@
+:root {
+  /* FLUXX Premium Glassmorphic Theme */
+  --fluxx-bg: #FFF3E2;
+  --fluxx-bg-warm: #FFF8EF;
+  
+  --fluxx-surface: #FFFFFF;
+  --fluxx-glass: rgba(255, 255, 255, 0.58);
+  --fluxx-glass-strong: rgba(255, 255, 255, 0.78);
+  --fluxx-glass-light: rgba(255, 255, 255, 0.3);
+
+  --fluxx-orange: #F47A24;
+  --fluxx-coral: #F05A3C;
+  --fluxx-peach: #FFB77A;
+
+  --fluxx-text: #2B211C;
+  --fluxx-muted: #82746B;
+
+  --fluxx-success: #3FA66B;
+  --fluxx-critical: #D94C3D;
+
+  --fluxx-border: rgba(255, 255, 255, 0.65);
+  --fluxx-border-strong: rgba(255, 255, 255, 0.85);
+
+  --fluxx-radius-lg: 28px;
+  --fluxx-radius-md: 16px;
+  --fluxx-radius-sm: 10px;
+
+  --fluxx-shadow-glass: 0 30px 80px rgba(92, 54, 25, 0.10);
+  --fluxx-shadow-card: 0 8px 32px rgba(92, 54, 25, 0.05);
+}

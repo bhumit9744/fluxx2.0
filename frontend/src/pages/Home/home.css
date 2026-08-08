@@ -1,0 +1,21 @@
+/* Cinematic Homepage Scene Styling */
+
+.scene-container {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #080B10;
+  color: #F1F5F9;
+}
+
+.scene-text-glow {
+  text-shadow: 0 0 35px rgba(61, 214, 198, 0.4);
+}
+
+.glow-gradient-teal {
+  background: radial-gradient(circle at 50% 50%, rgba(14, 168, 154, 0.15) 0%, rgba(8, 11, 16, 0) 70%);
+}
