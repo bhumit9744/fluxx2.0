@@ -84,8 +84,12 @@ export const apiService = {
     return res.json();
   },
 
-  async generateReport() {
-    const res = await fetch(`${API_BASE}/reports/generate`, { method: 'POST' });
+  async generateReport(payload: any = {}) {
+    const res = await fetch(`${API_BASE}/reports/generate`, { 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
     if (!res.ok) throw new Error('Failed to trigger report generation');
     return res.json();
   },
@@ -138,6 +142,6 @@ export const apiService = {
   },
 
   getDownloadPdfUrl(reportId?: string) {
-    return reportId ? `${API_BASE}/reports/${reportId}/pdf` : `${API_BASE}/reports/download`;
+    return reportId ? `${API_BASE}/reports/${reportId}/html` : `${API_BASE}/reports/download`;
   }
 };

@@ -96,7 +96,8 @@ export const useAnalysisWorkflow = () => {
 
       let reportRes;
       try {
-        reportRes = await apiService.generateReport();
+        const language = useEnvironmentStore.getState().reportLanguage || 'en';
+        reportRes = await apiService.generateReport({ language });
         // Refresh reports archive in store
         useEnvironmentStore.getState().fetchReports();
       } catch (err: any) {
@@ -112,7 +113,7 @@ export const useAnalysisWorkflow = () => {
         report: { 
           status: 'complete', 
           progress: 100, 
-          url: apiService.getDownloadPdfUrl(), 
+          url: apiService.getDownloadPdfUrl(reportRes?.reportId), 
           reportData: reportRes?.report || null 
         }
       });

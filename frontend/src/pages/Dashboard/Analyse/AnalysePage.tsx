@@ -29,6 +29,16 @@ export const AnalysePage: React.FC = () => {
 
         {/* Header Action Buttons */}
         <div className="flex items-center space-x-3">
+          <select
+            value={useEnvironmentStore().reportLanguage}
+            onChange={(e) => useEnvironmentStore.getState().setReportLanguage(e.target.value)}
+            className="px-3 py-2 rounded-2xl bg-white border border-[#EADCCF] text-[#2B211C] font-extrabold text-[12.5px] outline-none shadow-2xs focus:border-[#F47A24] cursor-pointer"
+          >
+            <option value="en">English Report</option>
+            <option value="hi">Hindi Report</option>
+            <option value="mr">Marathi Report</option>
+          </select>
+
           <button
             onClick={openUploadModal}
             className="px-4 py-2 rounded-2xl bg-white hover:bg-[#FAF3EA] border border-[#EADCCF] text-[#2B211C] font-extrabold text-[12.5px] tracking-tight flex items-center space-x-2 transition-all cursor-pointer shadow-2xs"

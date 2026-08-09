@@ -3,10 +3,11 @@ from typing import Dict, Any
 
 from app.services.analytics_service import analytics_service
 from app.services.idw_heatmap import calculate_idw_grid
+from app.services.ai_service import ai_service
 
 class ReportService:
     @staticmethod
-    def get_report_data() -> Dict[str, Any]:
+    async def get_report_data(language: str = "en") -> Dict[str, Any]:
         """
         Builds the complete 15-section environmental report data structure
         strictly computed from the active CSV dataset observations.
@@ -111,6 +112,20 @@ class ReportService:
         dataset_source = dataset_info.get("source", "Kharghar Environmental Survey")
         dynamic_title = dataset_source.replace(".csv", "").replace("_", " ").title() + " Intelligence Report" if "csv" in dataset_source else "Kharghar Environmental Intelligence Report"
 
+
+        interpretation = f"FLUXX identified elevated particulate concentration as the dominant contributor to the current environmental risk. The strongest observed environmental signal is elevated {eri.get('primary_factor', 'PM2.5 Surge')}, with the highest observation occurring at sample #{hotspot_sample}. The AI confirms {eri.get('score', 45)}/100 ERI driven significantly by localized particulate matter."
+        recommendations = analysis.get("recommendations", [])
+        
+        if language and language.lower() not in ["en", "english"]:
+            # Translate interpretation and recommendations
+            interpretation = await ai_service.translate_text(interpretation, language)
+            
+            # Translate recommendations (batching could be better but this works for a few items)
+            translated_recs = []
+            for rec in recommendations:
+                translated_recs.append(await ai_service.translate_text(rec, language))
+            recommendations = translated_recs
+
         # Structure exactly matching the user's requested payload
         return {
             "report": {
@@ -118,7 +133,8 @@ class ReportService:
                 "title": dynamic_title,
                 "location": loc,
                 "generated_at": gen_time,
-                "window": f"{dataset_info.get('time_range', {}).get('start', 'Cycle Start')} to {dataset_info.get('time_range', {}).get('end', 'Cycle End')}"
+                "window": f"{dataset_info.get('time_range', {}).get('start', 'Cycle Start')} to {dataset_info.get('time_range', {}).get('end', 'Cycle End')}",
+                "language": language
             },
             "summary": {
                 "eri": eri.get("score", 45),
@@ -146,8 +162,8 @@ class ReportService:
             "ai": {
                 "anomaly": analysis.get("anomalies", []),
                 "factors": sorted(ai_factors, key=lambda x: x["value"], reverse=True),
-                "interpretation": f"FLUXX identified elevated particulate concentration as the dominant contributor to the current environmental risk. The strongest observed environmental signal is elevated {eri.get('primary_factor', 'PM2.5 Surge')}, with the highest observation occurring at sample #{hotspot_sample}. The AI confirms {eri.get('score', 45)}/100 ERI driven significantly by localized particulate matter.",
-                "recommendations": analysis.get("recommendations", [])
+                "interpretation": interpretation,
+                "recommendations": recommendations
             },
             "pros": analysis.get("pros", []),
             "cons": analysis.get("cons", []),

@@ -99,6 +99,7 @@ export interface EnvironmentState {
   reportsCategoryFilter: string;
   reportsSortBy: string;
   isReportPreviewOpen: boolean;
+  reportLanguage: string;
 
   // Analysis 3-Step Workflow State
   workflow: {
@@ -154,6 +155,7 @@ export interface EnvironmentState {
   setReportsSortBy: (sortBy: string) => void;
   setReportPreviewOpen: (open: boolean) => void;
   setSelectedReportDetail: (report: ReportItem | null) => void;
+  setReportLanguage: (language: string) => void;
 
   setWorkflowStep: (step: 'process' | 'analysis' | 'report' | 'complete') => void;
   updateWorkflowState: (partial: Partial<EnvironmentState['workflow']>) => void;
@@ -278,6 +280,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   reportsCategoryFilter: 'All',
   reportsSortBy: 'newest',
   isReportPreviewOpen: false,
+  reportLanguage: 'en',
 
   workflow: {
     currentStep: 'process',
@@ -377,6 +380,9 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   setSelectedReportDetail: (selectedReportDetail) => {
     set({ selectedReportDetail });
   },
+  setReportLanguage: (reportLanguage) => {
+    set({ reportLanguage });
+  },
 
   fetchReports: async () => {
     set({ isReportsLoading: true });
@@ -424,7 +430,9 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
 
   generateAndSaveReport: async (payload?: any) => {
     try {
-      const res = await apiService.generateReport();
+      const language = get().reportLanguage || 'en';
+      const finalPayload = payload ? { ...payload, language } : { language };
+      const res = await apiService.generateReport(finalPayload);
       await get().fetchReports();
       return res.reportId || null;
     } catch (e) {

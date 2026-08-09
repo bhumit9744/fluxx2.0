@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Response, UploadFile, File, HTTPException, Query
+from fastapi import APIRouter, Response, UploadFile, File, HTTPException, Query, Request
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
+import os
 
 from app.services.report_service import report_service
 from app.services.replay_engine import replay_engine
@@ -17,6 +19,10 @@ class SaveReportPayload(BaseModel):
     title: Optional[str] = None
     type: Optional[str] = "survey"
     location: Optional[str] = None
+    language: Optional[str] = "en"
+
+templates_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+templates = Jinja2Templates(directory=templates_dir)
 
 @router.get("")
 @router.get("/")
@@ -36,11 +42,11 @@ def get_all_reports(
     }
 
 @router.get("/data")
-def get_active_report_data():
+async def get_active_report_data():
     """
     Returns the active live report dossier data for current telemetry.
     """
-    return report_service.get_report_data()
+    return await report_service.get_report_data()
 
 @router.get("/{report_id}")
 def get_report_by_id(report_id: str):
@@ -56,12 +62,13 @@ def get_report_by_id(report_id: str):
     }
 
 @router.post("/generate")
-def generate_and_save_report(payload: Optional[SaveReportPayload] = None):
+async def generate_and_save_report(payload: Optional[SaveReportPayload] = None):
     """
     Generates a complete environmental report snapshot from active dataset observations
     and persists it into SQLite database.
     """
-    full_report = report_service.get_report_data()
+    lang = payload.language if payload else "en"
+    full_report = await report_service.get_report_data(language=lang)
     dataset_info = analytics_service.get_dataset_info()
     analysis = analytics_service.get_full_analysis()
 
@@ -137,8 +144,29 @@ def download_report_pdf(report_id: str):
         "status": "SUCCESS",
         "reportId": report_id,
         "title": report["title"],
-        "pdfUrl": report.get("pdfUrl", f"/reports/{report_id}.pdf")
+        "pdfUrl": report.get("pdfUrl", f"/api/v1/reports/{report_id}/html")
     }
+
+@router.get("/{report_id}/html")
+def view_report_html(request: Request, report_id: str):
+    """
+    Renders the report as a styled HTML dossier.
+    """
+    report = reports_repository.get_report_by_id(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail=f"Report {report_id} not found.")
+    
+    report_data = report.get("fullReport", {})
+    if not report_data:
+        raise HTTPException(status_code=404, detail="HTML data missing from report.")
+        
+    return templates.TemplateResponse(
+        "report_template.html",
+        {
+            "request": request,
+            **report_data
+        }
+    )
 
 @router.post("/upload-csv")
 async def upload_csv_file(file: UploadFile = File(...)):
@@ -146,7 +174,7 @@ async def upload_csv_file(file: UploadFile = File(...)):
         content = await file.read()
         csv_str = content.decode("utf-8", errors="ignore")
         res = replay_engine.load_custom_csv(csv_str, filename=file.filename or "uploaded.csv")
-        fresh_report = report_service.get_report_data()
+        fresh_report = await report_service.get_report_data()
         return {
             "status": "SUCCESS",
             "message": f"Successfully ingested {res['observations_count']} environmental observations from {file.filename}.",
@@ -158,10 +186,10 @@ async def upload_csv_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV file: {str(e)}")
 
 @router.post("/upload-csv-text")
-def upload_csv_text(payload: UploadCSVPayload):
+async def upload_csv_text(payload: UploadCSVPayload):
     try:
         res = replay_engine.load_custom_csv(payload.csv_text, filename=payload.filename or "uploaded.csv")
-        fresh_report = report_service.get_report_data()
+        fresh_report = await report_service.get_report_data()
         return {
             "status": "SUCCESS",
             "message": f"Successfully ingested {res['observations_count']} observations.",

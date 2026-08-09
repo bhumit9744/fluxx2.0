@@ -6,12 +6,18 @@ from app.services.analytics_service import analytics_service
 from app.services.environmental_context import environmental_context_engine
 from app.services.ai_service import ai_service
 from app.services.csv_ai.csv_tools import csv_tools
+from app.services.rag_engine import rag_engine
 
 router = APIRouter(prefix="/ai", tags=["AI Engine"])
 
 @router.get("/analysis")
 def get_ai_analysis():
     return analytics_service.get_full_analysis()
+
+@router.post("/rag/sync")
+def sync_rag_index():
+    result = rag_engine.build_index()
+    return result
 
 @router.get("/forecast")
 def get_ai_forecast():

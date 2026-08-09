@@ -16,6 +16,6 @@ class Settings:
     
     # Base directory
     BASE_DIR: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DATASET_PATH: str = os.path.join(BASE_DIR, "data", "kharghar_dataset.csv")
+    DATASET_PATH: str = os.path.join(BASE_DIR, "data", "environment", "fluxx_kharghar_300_observations.csv")
 
 settings = Settings()

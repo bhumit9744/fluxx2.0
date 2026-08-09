@@ -15,6 +15,7 @@ from .csv_ai.query_router import (
 from .csv_ai.context_builder import (
     build_data_context,
 )
+from .rag_engine import rag_engine
 
 load_dotenv()
 
@@ -68,6 +69,11 @@ class AIService:
                     )
                 except ValueError as e:
                     data_context = f"FLUXX VERIFIED DATA ERROR:\n{str(e)}\n\nIMPORTANT RULES:\nTell the user the requested parameter is not available. List the available parameters. Do not apologize, just state the facts."
+                    
+        # RAG Retrieval - Supplement with semantic search context from vector database
+        rag_context = rag_engine.retrieve(question, k=5)
+        if rag_context:
+            data_context += f"\n\nADDITIONAL RAG CONTEXT (VECTOR SEARCH RESULTS):\n{rag_context}\n"
 
         prompt = f"""
 {SYSTEM_PROMPT}
@@ -132,6 +138,36 @@ USER QUESTION:
             "dataset": dataset if data_context else None,
             "grounded": bool(data_context),
         }
+
+    async def translate_text(self, text: str, target_language: str) -> str:
+        """Translates text to the target language using Gemini API."""
+        if target_language.lower() in ["en", "english"]:
+            return text
+            
+        gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("LLM_API_KEY")
+        if not gemini_key:
+            return text
+            
+        prompt = f"Translate the following text into {target_language}. Keep technical terms intact and maintain the formatting. Return ONLY the translated text, without quotes or extra conversational text.\n\nText to translate:\n{text}"
+        
+        gemini_contents = [{"role": "user", "parts": [{"text": prompt}]}]
+        models_to_try = ["gemini-flash-latest", "gemini-2.0-flash", "gemini-3.5-flash", "gemini-flash-lite-latest"]
+        
+        for model_id in models_to_try:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={gemini_key}"
+                payload = json.dumps({
+                    "contents": gemini_contents,
+                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 2048}
+                }).encode("utf-8")
+                req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=8) as response:
+                    res_data = json.loads(response.read().decode("utf-8"))
+                    return res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            except Exception as e:
+                continue
+                
+        return text
 
     async def execute_query(
         self,
