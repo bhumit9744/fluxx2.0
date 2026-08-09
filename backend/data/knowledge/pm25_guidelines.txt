@@ -1,0 +1,12 @@
+PM2.5 (Fine Particulate Matter) Guidelines
+PM2.5 refers to atmospheric particulate matter that has a diameter of less than 2.5 micrometers. These particles are so small they can only be detected with an electron microscope. 
+Sources include combustion of fuels (such as motor vehicles, power plants, and residential wood burning), agricultural burning, and some industrial processes.
+Because of their microscopic size, PM2.5 particles can penetrate deep into the respiratory tract and reach the lungs, potentially entering the bloodstream.
+Typical interpretation values (general):
+- < 12 µg/m³: Good
+- 12.1 to 35.4 µg/m³: Moderate
+- 35.5 to 55.4 µg/m³: Unhealthy for Sensitive Groups
+- 55.5 to 150.4 µg/m³: Unhealthy
+- 150.5 to 250.4 µg/m³: Very Unhealthy
+- > 250.5 µg/m³: Hazardous
+Elevated PM2.5 is a primary driver of poor air quality in urban and industrial environments.

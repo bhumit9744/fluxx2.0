@@ -1,0 +1,12 @@
+PM10 (Coarse Particulate Matter) Guidelines
+PM10 refers to inhalable particles, with diameters that are generally 10 micrometers and smaller.
+Sources include dust from construction sites, landfills and agriculture, wildfires and brush/waste burning, industrial sources, and wind-blown dust from open lands, pollen, and fragments of bacteria.
+PM10 particles can irritate the eyes, nose, and throat. While less dangerous than PM2.5 because they typically do not penetrate as deeply into the lungs, high levels of PM10 can still exacerbate respiratory conditions like asthma.
+Typical interpretation values:
+- < 54 µg/m³: Good
+- 55 to 154 µg/m³: Moderate
+- 155 to 254 µg/m³: Unhealthy for Sensitive Groups
+- 255 to 354 µg/m³: Unhealthy
+- 355 to 424 µg/m³: Very Unhealthy
+- > 425 µg/m³: Hazardous
+Co-occurring elevation of both PM10 and PM2.5 strongly indicates local combustion sources, traffic pollution, or significant dust resuspension.

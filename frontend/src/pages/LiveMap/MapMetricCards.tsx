@@ -48,41 +48,12 @@ export const MapMetricCards: React.FC = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 font-sans select-none">
-      {cards.map((card) => (
-        <div 
-          key={card.id}
-          className="rounded-[20px] bg-white/85 backdrop-blur-md border border-[#F3E6D7] shadow-[0_4px_16px_rgba(70,40,20,0.03)] px-4 py-3 flex items-center justify-between transition-all hover:border-[#F47A24]/30"
-        >
-          <div>
-            <div className="text-[10.5px] font-extrabold text-[#8C827A] tracking-wider uppercase">
-              {card.label}
-            </div>
-            <div className="flex items-baseline space-x-1.5 mt-0.5">
-              <span className="text-[19px] font-black text-[#2B211C] font-mono tracking-tight">
-                {card.value}
-              </span>
-              {card.unit && (
-                <span className="text-[11px] font-bold text-[#8C827A]">
-                  {card.unit}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="text-right">
-            {card.isRisk ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10.5px] font-extrabold bg-[#FFF0E5] text-[#F47A24] border border-[#F47A24]/20 uppercase">
-                {card.change}
-              </span>
-            ) : (
-              <span className={`inline-flex items-center text-[11px] font-extrabold ${
-                card.isUp ? 'text-[#D9534F]' : 'text-[#3FA66B]'
-              }`}>
-                {card.change}
-              </span>
-            )}
-          </div>
+    <div className="flex items-center space-x-6 px-4 py-2 bg-white/80 backdrop-blur-md rounded-2xl border border-[#F3E6D7] shadow-sm w-fit">
+      {cards.filter(c => !c.isRisk).map((card) => (
+        <div key={card.id} className="flex items-baseline space-x-1.5">
+          <span className="text-[11px] font-extrabold text-[#8C827A] uppercase">{card.label}</span>
+          <span className="text-[13px] font-black text-[#2B211C]">{card.value}</span>
+          <span className="text-[10px] font-bold text-[#8C827A] uppercase">AVG</span>
         </div>
       ))}
     </div>

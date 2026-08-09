@@ -5,62 +5,87 @@ import urllib.error
 from typing import Dict, Any, List, Optional
 from dotenv import load_dotenv
 
-from app.services.analytics_service import analytics_service
+from .csv_ai.csv_tools import csv_tools
+from .csv_ai.query_router import (
+    detect_parameter,
+    detect_operation,
+    is_data_question,
+    resolve_dataset,
+)
+from .csv_ai.context_builder import (
+    build_data_context,
+)
 
 load_dotenv()
 
+SYSTEM_PROMPT = """
+You are FLUXX Environmental Intelligence Copilot.
+
+You answer using verified FLUXX data supplied by the backend.
+
+CRITICAL RULES:
+
+1. Never invent sensor measurements.
+2. Never change a number supplied by the backend.
+3. Never invent coordinates.
+4. Never invent timestamps.
+5. Never claim a pollutant was measured if it is absent.
+6. Python/Pandas calculations are authoritative.
+7. Your job is to explain the verified results naturally.
+8. Clearly distinguish measured data from general knowledge.
+9. If data is unavailable, say so.
+10. Do not make up environmental statistics.
+"""
+
 class AIService:
-    @staticmethod
-    def generate_chat_response(
-        user_message: str,
-        messages_history: Optional[List[Dict[str, str]]] = None,
-        context_override: Optional[Dict[str, Any]] = None
+    async def chat(
+        self,
+        question: str,
+        history: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
-        """
-        Versatile Conversational AI Assistant (Google Assistant style).
-        Answers ANY question freely, naturally, and accurately.
-        Grounded in live environmental telemetry whenever asked about conditions, locations, or air quality.
-        """
-        # 1. Deterministic Ground Truth Calculations
-        full_analysis = analytics_service.get_full_analysis()
-        stats = full_analysis.get("statistics", {})
-        hotspot = full_analysis.get("hotspot", {})
-        eri = full_analysis.get("eri", {})
-        dataset_info = analytics_service.get_dataset_info()
-        curr = analytics_service.get_current_reading()
-        curr_sensors = curr.get("sensors", {})
 
-        pm25_val = curr_sensors.get("pm25", 48.5)
-        pm10_val = curr_sensors.get("pm10", 77.3)
-        co2_val = curr_sensors.get("co2", 558.8)
-        temp_val = curr_sensors.get("temperature", 28.1)
-        hum_val = curr_sensors.get("humidity", 80.1)
-        wind_val = curr_sensors.get("windSpeed", 2.6)
+        data_context = ""
+        dataset = None
 
-        # 2. System Instruction for Gemini
-        system_instruction_text = (
-            "You are a helpful, versatile, and natural AI assistant (just like Google Assistant) for the FLUXX platform.\n"
-            "You can answer ANY question the user asks: general knowledge, science, everyday topics, weather, health, questions about how things work, and conversational chat.\n"
-            "Speak naturally, warmly, and concisely with clear markdown formatting when helpful.\n\n"
-            "LIVE KHARGHAR ENVIRONMENTAL CONTEXT (Use when relevant):\n"
-            f"- Location: {dataset_info.get('location', 'Kharghar, Navi Mumbai')}\n"
-            f"- Current PM2.5: {pm25_val} µg/m³ (Survey average: {stats.get('pm25', {}).get('avg', 42.6)} µg/m³, Peak: {hotspot.get('peak_value', 63.1)} µg/m³ in {hotspot.get('sector', 'Sector 4')})\n"
-            f"- Current PM10: {pm10_val} µg/m³, CO2: {co2_val} ppm, Temperature: {temp_val}°C, Humidity: {hum_val}%, Wind Speed: {wind_val} m/s\n"
-            f"- Environmental Risk Index (ERI): {eri.get('score', 45)}/100 ({eri.get('level', 'MODERATE')} Risk)\n"
-            "- If asked about unmeasured gases like Ozone or SO2, let the user know kindly that the active sensor array currently tracks PM2.5, PM10, CO2, Temp, Humidity, and Wind."
-        )
+        if is_data_question(question):
+            dataset = resolve_dataset(question)
+            
+            if dataset:
+                parameter = detect_parameter(question)
+                operation = detect_operation(question)
+                
+                try:
+                    result = await self.execute_query(
+                        dataset=dataset,
+                        parameter=parameter,
+                        operation=operation,
+                    )
+                    
+                    data_context = build_data_context(
+                        question,
+                        dataset,
+                        result,
+                    )
+                except ValueError as e:
+                    data_context = f"FLUXX VERIFIED DATA ERROR:\n{str(e)}\n\nIMPORTANT RULES:\nTell the user the requested parameter is not available. List the available parameters. Do not apologize, just state the facts."
+
+        prompt = f"""
+{SYSTEM_PROMPT}
+
+{data_context}
+
+USER QUESTION:
+{question}
+"""
 
         answer_text = None
-        source_model = "google_assistant"
-
-        # 3. Call Gemini API
         gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("LLM_API_KEY")
+
         if gemini_key:
             gemini_contents = []
             
-            # Add chat history
-            if messages_history:
-                for m in messages_history[-8:]:
+            if history:
+                for m in history[-8:]:
                     role = "model" if m.get("role") in ["assistant", "bot"] else "user"
                     text = m.get("content") or m.get("text", "")
                     if text:
@@ -68,11 +93,10 @@ class AIService:
                             "role": role,
                             "parts": [{"text": text}]
                         })
-            
-            # Current turn
+                        
             gemini_contents.append({
                 "role": "user",
-                "parts": [{"text": user_message}]
+                "parts": [{"text": prompt}]
             })
 
             models_to_try = [
@@ -86,12 +110,9 @@ class AIService:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={gemini_key}"
                     payload = json.dumps({
-                        "system_instruction": {
-                            "parts": [{"text": system_instruction_text}]
-                        },
                         "contents": gemini_contents,
                         "generationConfig": {
-                            "temperature": 0.4,
+                            "temperature": 0.3,
                             "maxOutputTokens": 800
                         }
                     }).encode("utf-8")
@@ -99,83 +120,48 @@ class AIService:
                     with urllib.request.urlopen(req, timeout=8) as response:
                         res_data = json.loads(response.read().decode("utf-8"))
                         answer_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
-                        source_model = f"google_{model_id}"
                         break
                 except Exception:
                     continue
 
-        # 4. Built-in Natural Fallback if offline
         if not answer_text:
-            q = user_message.lower().strip()
-            if any(w in q for w in ["hi", "hello", "hey", "who are you", "what can you do"]):
-                answer_text = (
-                    f"Hi! I'm your **FLUXX Assistant**. You can ask me anything — from general questions to live environmental data. "
-                    f"Currently in Kharghar, PM2.5 is **{pm25_val} µg/m³** and the Environmental Risk Index is **{eri.get('score', 45)}/100 ({eri.get('level', 'MODERATE')})**. "
-                    f"How can I help you today?"
-                )
-            elif any(w in q for w in ["hotspot", "peak", "highest", "where"]):
-                answer_text = (
-                    f"The highest PM2.5 level was recorded in **{hotspot.get('sector', 'Sector 4')}** at **{hotspot.get('peak_value', 63.1)} µg/m³** "
-                    f"(Observation #{hotspot.get('sample_index', 36)}). Other sectors are averaging around **{stats.get('pm25', {}).get('avg', 42.6)} µg/m³**."
-                )
-            elif any(w in q for w in ["safe", "health", "exercise", "run", "outside"]):
-                answer_text = (
-                    f"Air quality is currently **{eri.get('level', 'MODERATE')}** with an ERI score of **{eri.get('score', 45)}/100**. "
-                    f"General outdoor activities are safe, but sensitive groups should take precautions near Sector 4."
-                )
-            else:
-                answer_text = (
-                    f"In Kharghar, PM2.5 is currently at **{pm25_val} µg/m³**, temperature is **{temp_val}°C**, "
-                    f"and wind speed is **{wind_val} m/s**. Let me know what you'd like to explore!"
-                )
-
-        # 5. Smart Dashboard Actions
-        q_low = user_message.lower()
-        actions = []
-        if any(w in q_low for w in ["hotspot", "peak", "highest", "sector 4", "map", "location", "coordinates"]):
-            actions.append({
-                "type": "SHOW_ON_MAP",
-                "label": f"Focus Sector 4 Hotspot ({hotspot.get('peak_value', 63.1)} µg/m³)",
-                "latitude": hotspot.get("latitude", 19.054983),
-                "longitude": hotspot.get("longitude", 73.066209),
-                "sample_index": hotspot.get("sample_index", 36)
-            })
-
-        if any(w in q_low for w in ["report", "audit", "summary", "pdf", "generate", "document"]):
-            actions.append({
-                "type": "VIEW_REPORT",
-                "label": "Open Compliance Audit Report"
-            })
-
-        followups = [
-            "What is the current air quality in Kharghar?",
-            "Where is the PM2.5 hotspot?",
-            "How does wind speed affect pollution dispersion?",
-            "View environmental audit report"
-        ]
-
-        metrics = [
-            {"label": "CURRENT PM2.5", "value": str(pm25_val), "unit": "µg/m³"},
-            {"label": "SURVEY AVG", "value": str(stats.get("pm25", {}).get("avg", 42.6)), "unit": "µg/m³"},
-            {"label": "PEAK HOTSPOT", "value": str(hotspot.get("peak_value", 63.1)), "unit": "µg/m³"},
-            {"label": "ERI RISK", "value": f"{eri.get('score', 45)}/100", "unit": eri.get("level", "MODERATE")}
-        ]
+            answer_text = "Sorry, I am currently unable to reach the AI models. However, your data is still being processed."
 
         return {
             "answer": answer_text,
-            "reply": answer_text,
-            "confidence": 0.96,
-            "metrics": metrics,
-            "action": actions[0] if actions else None,
-            "actions": actions,
-            "followups": followups,
-            "suggested_follow_ups": followups,
-            "source": source_model,
-            "context_summary": {
-                "observations": dataset_info.get("total_observations", 50),
-                "eri": eri.get("score", 45),
-                "hotspot_peak": hotspot.get("peak_value", 63.1)
-            }
+            "dataset": dataset if data_context else None,
+            "grounded": bool(data_context),
         }
+
+    async def execute_query(
+        self,
+        dataset: str,
+        parameter: Optional[str],
+        operation: Optional[str],
+    ) -> Dict[str, Any]:
+
+        if operation == "average":
+            return csv_tools.average(dataset, parameter)
+
+        if operation == "maximum":
+            return csv_tools.maximum(dataset, parameter)
+
+        if operation == "minimum":
+            return csv_tools.minimum(dataset, parameter)
+
+        if operation == "latest":
+            return csv_tools.latest(dataset, parameter)
+
+        if operation == "trend":
+            return csv_tools.trend(dataset, parameter)
+
+        if operation == "count":
+            return csv_tools.count(dataset)
+
+        if operation == "compare":
+            parameters = [parameter] if parameter else []
+            return csv_tools.compare(dataset, parameters)
+
+        return csv_tools.records(dataset, parameter)
 
 ai_service = AIService()

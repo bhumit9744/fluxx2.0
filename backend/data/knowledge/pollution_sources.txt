@@ -1,0 +1,7 @@
+Common Sources of Environmental Air Pollution
+Pollutants in urban and industrial environments typically originate from several primary sources:
+1. Mobile Sources: Cars, buses, planes, trucks, and trains. These primarily emit NOx, CO, and PM2.5.
+2. Stationary Sources: Power plants, oil refineries, industrial facilities, and factories. These can emit SO2, NOx, PM, and various Volatile Organic Compounds (VOCs).
+3. Area Sources: Agricultural areas, cities, and wood burning fireplaces. These emit PM10, PM2.5, and VOCs.
+4. Natural Sources: Wind-blown dust, wildfires, and volcanoes. These emit huge amounts of PM10 and PM2.5.
+When attempting to identify a hotspot source, consider the spatial location. High PM10 and PM2.5 near a construction site implies dust. High PM2.5, CO, and NO2 near a highway implies vehicle exhaust. Elevated measurements in a specific sector should be correlated with known geographic features of that sector.

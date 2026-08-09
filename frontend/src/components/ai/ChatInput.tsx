@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -10,7 +10,7 @@ interface ChatInputProps {
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
   disabled = false,
-  placeholder = "Ask FLUXX about Kharghar survey..."
+  placeholder = "Ask FLUXX AI about telemetry & insights..."
 }) => {
   const [text, setText] = useState('');
 
@@ -24,22 +24,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-3 border-t border-white/10 bg-slate-950 flex items-center space-x-2 shrink-0 font-sans"
+      className="flex items-center space-x-2 font-sans select-none"
     >
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        disabled={disabled}
-        placeholder={placeholder}
-        className="flex-1 px-3.5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-xs focus:outline-hidden focus:border-[#0EA89A] transition-colors disabled:opacity-50"
-      />
+      <div className="relative flex-1 flex items-center">
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          disabled={disabled}
+          placeholder={placeholder}
+          className="w-full pl-3.5 pr-9 py-2.5 rounded-2xl bg-[#FAF3EA] border border-[#F3E6D7] text-xs font-medium text-[#2B211C] placeholder-[#8C827A] focus:outline-none focus:border-[#F47A24] focus:ring-2 focus:ring-[#F47A24]/10 transition-all disabled:opacity-50"
+        />
+        <Sparkles className="absolute right-3 w-3.5 h-3.5 text-[#F47A24]/60 pointer-events-none" />
+      </div>
+
       <button
         type="submit"
         disabled={!text.trim() || disabled}
-        className="p-2.5 rounded-2xl bg-[#0EA89A] hover:bg-[#0C8E82] disabled:opacity-40 text-white transition-all cursor-pointer shadow-md flex items-center justify-center"
+        className="w-9 h-9 rounded-2xl bg-linear-to-tr from-[#F47A24] to-[#FF9F5A] hover:opacity-95 disabled:opacity-40 text-white transition-all cursor-pointer shadow-xs flex items-center justify-center shrink-0 active:scale-95"
       >
-        <Send className="w-4 h-4" />
+        <Send className="w-3.5 h-3.5" />
       </button>
     </form>
   );

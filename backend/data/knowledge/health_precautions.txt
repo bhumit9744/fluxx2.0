@@ -1,0 +1,7 @@
+General Health Precautions for Air Pollution
+When interpreting environmental data for health recommendations, consider the following general guidance:
+- When AQI is Good or Moderate: Air quality is acceptable. Enjoy outdoor activities.
+- When AQI is Unhealthy for Sensitive Groups: People with heart or lung disease, older adults, children, and teenagers should reduce prolonged or heavy exertion.
+- When AQI is Unhealthy: Everyone should reduce prolonged or heavy exertion outdoors. Sensitive groups should avoid prolonged exertion altogether.
+- When AQI is Very Unhealthy or Hazardous: Everyone should avoid all physical activity outdoors. Stay indoors, keep windows closed, and use an air purifier if available.
+Always consult a medical professional for personalized health advice. FLUXX provides environmental monitoring data but does not issue official medical recommendations.

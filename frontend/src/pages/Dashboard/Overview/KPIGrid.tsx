@@ -189,21 +189,7 @@ export const KPIGrid: React.FC = () => {
               </span>
             </div>
 
-            {/* Bottom row: Trend % and Sparkline */}
-            <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#F9F3EA]">
-              <div className="flex items-center space-x-1 text-[11px] font-bold">
-                {isUp ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-[#E55353]" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-[#3FA66B]" />
-                )}
-                <span className={isUp ? 'text-[#E55353]' : 'text-[#3FA66B]'}>
-                  {c.change}%
-                </span>
-                <span className="text-[#A0958C] font-normal text-[10px]">vs yesterday</span>
-              </div>
-              {renderSparkline(c.color, c.trend)}
-            </div>
+            {/* Bottom row: removed as requested */}
           </div>
         );
       })}
@@ -243,20 +229,7 @@ export const KPIGrid: React.FC = () => {
           </span>
         </div>
 
-        {/* Bottom row: Trend & Mini Radial Gauge */}
-        <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#F9F3EA]">
-          <div className="flex items-center space-x-1 text-[11px] font-bold">
-            {riskTrend === 'up' ? (
-              <TrendingUp className="w-3.5 h-3.5 text-[#E55353]" />
-            ) : (
-              <TrendingDown className="w-3.5 h-3.5 text-[#3FA66B]" />
-            )}
-            <span className={riskTrend === 'up' ? 'text-[#E55353]' : 'text-[#3FA66B]'}>
-              {riskChange}%
-            </span>
-          </div>
-          {renderGauge(riskScore, getRiskColor(riskLevel))}
-        </div>
+        {/* Bottom row: removed as requested */}
 
       </div>
 

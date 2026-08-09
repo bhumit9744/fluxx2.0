@@ -92,30 +92,27 @@ export const EarthMap: React.FC<{ heightClass?: string; isOverview?: boolean }> 
     }
 
     // 2. Draw IDW Continuous Spatial Interpolation Heatmap
-    if (showHeatmap && heatmapData && heatmapData.grid_cells) {
-      const cells = heatmapData.grid_cells;
+    if (showHeatmap && heatmapData && heatmapData.grid) {
+      const cells = heatmapData.grid;
       const cellSize = Math.max(14, (width / 28) * zoomLevel);
+      const average = heatmapData.average || 40;
 
       cells.forEach((cell) => {
         const { x, y } = project(cell.lat, cell.lng);
-        const intensity = cell.intensity; // 0.0 to 1.0
-        const confidence = showConfidence ? cell.confidence : 1.0;
-
-        // Gradient color: Low (Teal #0EA89A) -> Mid (Amber #E6A23C) -> High (Red #D95353)
+        // Instead of cell.intensity, we use actual PM2.5 values relative to average
+        const val = cell.value;
+        const diff = val - average;
+        
         let r, g, b;
-        if (intensity < 0.5) {
-          const t = intensity / 0.5;
-          r = Math.round(14 + (230 - 14) * t);
-          g = Math.round(168 + (162 - 168) * t);
-          b = Math.round(154 + (60 - 154) * t);
+        if (diff < -5) {
+          r = 14; g = 168; b = 154; // Teal
+        } else if (diff < 10) {
+          r = 230; g = 162; b = 60; // Amber
         } else {
-          const t = (intensity - 0.5) / 0.5;
-          r = Math.round(230 + (217 - 230) * t);
-          g = Math.round(162 + (83 - 162) * t);
-          b = Math.round(60 + (83 - 60) * t);
+          r = 217; g = 83; b = 83; // Red
         }
 
-        const alpha = Math.min(0.75, (0.2 + intensity * 0.55) * confidence);
+        const alpha = Math.min(0.75, (0.4) * (showConfidence ? 1.0 : 1.0));
 
         const grad = ctx.createRadialGradient(x, y, 0, x, y, cellSize * 1.5);
         grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
@@ -194,7 +191,7 @@ export const EarthMap: React.FC<{ heightClass?: string; isOverview?: boolean }> 
       ctx.strokeStyle = 'rgba(61, 214, 198, 0.4)';
       ctx.lineWidth = 1;
       
-      const label = `SAMPLE #${currentReading.sample} | ${currentReading.sensors[selectedLayer]} ${heatmapData?.unit || 'µg/m³'}`;
+      const label = `SAMPLE #${currentReading.sample} | ${currentReading.sensors[selectedLayer as keyof typeof currentReading.sensors]} ${heatmapData?.unit || 'µg/m³'}`;
       ctx.font = 'bold 10px JetBrains Mono';
       const textWidth = ctx.measureText(label).width;
 
@@ -314,19 +311,19 @@ export const EarthMap: React.FC<{ heightClass?: string; isOverview?: boolean }> 
       {showHeatmap && heatmapData && (
         <div className="absolute bottom-4 left-4 z-20 bg-[#080B10]/90 p-3 rounded-2xl border border-white/10 backdrop-blur-xl text-xs font-mono space-y-1.5 max-w-xs">
           <div className="flex items-center justify-between text-[11px]">
-            <span className="font-bold text-white uppercase">{heatmapData.label} IDW INTERPOLATION</span>
+            <span className="font-bold text-white uppercase">{heatmapData.parameter || 'PM2.5'} IDW INTERPOLATION</span>
             <span className="text-[#3DD6C6]">{heatmapData.unit}</span>
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-[10px] text-[#3DD6C6] font-bold">{heatmapData.stats.min}</span>
+            <span className="text-[10px] text-[#3DD6C6] font-bold">{heatmapData.min || 0}</span>
             <div className="flex-1 h-2 rounded-full bg-gradient-to-r from-[#0EA89A] via-[#E6A23C] to-[#D95353]" />
-            <span className="text-[10px] text-[#D95353] font-bold">{heatmapData.stats.max}</span>
+            <span className="text-[10px] text-[#D95353] font-bold">{heatmapData.max || 100}</span>
           </div>
 
           <div className="text-[9px] text-slate-400 flex items-center justify-between">
             <span>50 Kharghar Observations</span>
-            <span>24x24 Spatial Grid</span>
+            <span>75x75 Spatial Grid</span>
           </div>
         </div>
       )}

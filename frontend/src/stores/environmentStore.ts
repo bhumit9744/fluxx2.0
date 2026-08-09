@@ -7,6 +7,7 @@ import {
   AIAnalysisReport
 } from '../types/environment';
 import { apiService } from '../services/api';
+import { calculateIDW } from '../utils/idwCalculator';
 import { replayService } from '../services/replay';
 import { wsClient } from '../services/websocket';
 import { FlightState } from '../types/flight';
@@ -16,6 +17,7 @@ export type AppMode = 'home' | 'login' | 'dashboard';
 export type PrimarySection = 'overview' | 'environment' | 'analyse' | 'reports' | 'live-map' | 'intelligence' | 'flight-ops';
 export type MapEngineType = 'google_3d' | 'maplibre_twin';
 export type LayerType = 'pm25' | 'pm10' | 'co2' | 'temperature' | 'humidity' | 'windSpeed';
+export type MapTheme = 'satellite' | 'dark' | 'light';
 
 export interface ReportItem {
   id: string;
@@ -75,6 +77,7 @@ export interface EnvironmentState {
   presentationMode: boolean;
   connected: boolean;
   mapEngine: MapEngineType;
+  mapTheme: MapTheme;
   googleMapsApiKey: string;
   isGeneratingReport: boolean;
   reportData: AIAnalysisReport | null;
@@ -85,6 +88,8 @@ export interface EnvironmentState {
   dashboardData: DashboardMetrics;
   timeFilter: '6H' | '12H' | '24H' | '7D' | '30D';
   isUploadModalOpen: boolean;
+  availableDatasets: string[];
+  activeDataset: string;
 
   // Reports Section State
   reportsList: ReportItem[];
@@ -155,6 +160,7 @@ export interface EnvironmentState {
   resetWorkflow: () => void;
 
   setMapEngine: (engine: MapEngineType) => void;
+  setMapTheme: (theme: MapTheme) => void;
   setGoogleMapsApiKey: (key: string) => void;
   setIsGeneratingReport: (loading: boolean) => void;
   setReportData: (data: AIAnalysisReport | null) => void;
@@ -174,6 +180,9 @@ export interface EnvironmentState {
   resetReplay: () => Promise<void>;
   setSpeed: (speed: number) => Promise<void>;
   seekSample: (sample: number) => Promise<void>;
+  
+  fetchDatasets: () => Promise<void>;
+  switchActiveDataset: (filename: string) => Promise<void>;
 }
 
 const defaultReading: NormalizedReading = {
@@ -228,7 +237,7 @@ const initialApiKey = (typeof window !== 'undefined' && localStorage.getItem('fl
   || 'AIzaSyDY1spcnvs42sKq9JT0lzcUPmgjKbUAfGI';
 
 export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
-  appMode: 'home',
+  appMode: 'dashboard',
   activeSection: 'overview',
   currentReading: defaultReading,
   history: [defaultReading],
@@ -240,13 +249,14 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   selectedLayer: 'pm25',
   showSensors: true,
   showHeatmap: true,
-  showPath: true,
+  showPath: false,
   showConfidence: false,
   showVTOL: true,
   is3DMode: true,
   presentationMode: false,
   connected: false,
   mapEngine: 'google_3d',
+  mapTheme: 'satellite',
   googleMapsApiKey: initialApiKey,
   isGeneratingReport: false,
   reportData: null,
@@ -257,6 +267,8 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   dashboardData: getDefaultMetrics('kharghar_dataset.csv'),
   timeFilter: '24H',
   isUploadModalOpen: false,
+  availableDatasets: [],
+  activeDataset: 'fluxx_kharghar_300_observations.csv',
 
   // Reports Section Initial State
   reportsList: [],
@@ -422,6 +434,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   },
 
   setMapEngine: (engine) => set({ mapEngine: engine }),
+  setMapTheme: (theme) => set({ mapTheme: theme }),
   setGoogleMapsApiKey: (key) => {
     localStorage.setItem('fluxx_gmaps_key', key);
     set({ googleMapsApiKey: key });
@@ -470,6 +483,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     get().fetchLiveMapData();
     get().fetchReport();
     get().fetchReports();
+    get().fetchDatasets();
   },
 
   fetchDashboard: async () => {
@@ -496,13 +510,18 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   },
 
   fetchHeatmap: async (layer, upto) => {
-    const activeLayer = layer || get().selectedLayer;
-    const activeUpto = upto !== undefined ? upto : get().currentReading.sample;
     try {
-      const data = await apiService.getHeatmap(activeLayer, activeUpto);
-      set({ heatmapData: data });
+      const activeLayer = layer || get().selectedLayer;
+      const samples = get().allSamples;
+      
+      // Compute IDW matrix entirely on frontend
+      const idwResult = calculateIDW(samples, activeLayer, 100, 2.0);
+      
+      if (idwResult) {
+        set({ heatmapData: idwResult });
+      }
     } catch (e) {
-      console.warn('Failed to fetch heatmap:', e);
+      console.error('Failed to calculate spatial heatmap locally:', e);
     }
   },
 
@@ -540,7 +559,7 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
           currentReading: samplesRes.samples[0]
         });
       }
-      const heatmap = await apiService.getHeatmap(get().selectedLayer, undefined, 24);
+      const heatmap = await apiService.getHeatmap(get().selectedLayer, undefined, 75);
       set({ heatmapData: heatmap });
       await get().fetchDashboard();
       await get().fetchLiveMapData();
@@ -581,5 +600,31 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     try {
       await replayService.seek(sample);
     } catch (e) {}
+  },
+  
+  fetchDatasets: async () => {
+    try {
+      const res = await apiService.getAvailableDatasets();
+      if (res && res.files) {
+        set({ availableDatasets: res.files });
+      }
+    } catch (e) {
+      console.error('Failed to fetch datasets:', e);
+    }
+  },
+
+  switchActiveDataset: async (filename: string) => {
+    try {
+      await apiService.switchDataset(filename);
+      set({ activeDataset: filename });
+      
+      // Refetch all dependent state
+      await get().fetchSamples();
+      await get().fetchDashboard();
+      await get().fetchLiveMapData();
+      await get().fetchHeatmap(get().selectedLayer);
+    } catch (e) {
+      console.error('Failed to switch dataset:', e);
+    }
   }
 }));

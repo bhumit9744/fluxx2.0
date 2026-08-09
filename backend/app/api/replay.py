@@ -13,6 +13,9 @@ class SpeedRequest(BaseModel):
 class SeekRequest(BaseModel):
     sample: int = Field(..., ge=1, description="1-based sample index to seek to")
 
+class SwitchDatasetRequest(BaseModel):
+    filename: str = Field(..., description="The CSV filename to load")
+
 @router.post("/start")
 async def start_replay():
     await replay_engine.start()
@@ -38,6 +41,12 @@ async def seek_replay(req: SeekRequest):
     await replay_engine.seek(req.sample)
     return {"status": "SUCCESS", "message": f"Seeked to sample {req.sample}", "data": replay_engine.get_status()}
 
+@router.post("/dataset")
+async def switch_dataset(req: SwitchDatasetRequest):
+    replay_engine._load_dataset(req.filename)
+    await replay_engine.reset()
+    return {"status": "SUCCESS", "message": f"Switched dataset to {req.filename}", "data": replay_engine.get_status()}
+
 @router.get("/status")
 def get_replay_status():
     return replay_engine.get_status()
@@ -59,6 +68,6 @@ def get_all_samples():
     samples = replay_engine.get_all_samples()
     return {
         "count": len(samples),
-        "source": "kharghar_csv",
+        "source": getattr(replay_engine, 'active_filename', 'kharghar_csv'),
         "samples": samples
     }

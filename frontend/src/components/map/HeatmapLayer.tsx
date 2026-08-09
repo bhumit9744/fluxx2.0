@@ -9,23 +9,35 @@ interface HeatmapLayerProps {
 export const HeatmapLayer: React.FC<HeatmapLayerProps> = ({ data, visible }) => {
   if (!visible || !data) return null;
 
-  return (
-    <div className="absolute bottom-4 left-4 z-20 bg-white/90 p-3 rounded-2xl border border-slate-200/80 backdrop-blur-xl shadow-lg text-xs font-mono space-y-1.5 max-w-xs">
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="font-bold text-slate-900 uppercase">{data.label} IDW FIELD</span>
-        <span className="text-[#0EA89A] font-bold">{data.unit}</span>
+    <div className="absolute bottom-6 right-6 z-20 bg-black/40 p-5 rounded-3xl backdrop-blur-md shadow-2xl text-white font-sans w-64 border border-white/10 select-none">
+      <div className="text-[12px] font-bold text-white/90 uppercase tracking-wider mb-4">
+        AQI LEGEND
       </div>
 
-      <div className="flex items-center space-x-2">
-        <span className="text-[10px] text-[#0EA89A] font-bold">{data.stats.min}</span>
-        <div className="flex-1 h-2 rounded-full bg-gradient-to-r from-[#0EA89A] via-[#E6A23C] to-[#D95353]" />
-        <span className="text-[10px] text-[#D95353] font-bold">{data.stats.max}</span>
-      </div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-[13px]">
+          <div className="flex items-center space-x-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#8B5CF6] shadow-[0_0_8px_rgba(139,92,246,0.6)]"></div>
+            <span className="font-medium text-white/90">0 - 50</span>
+          </div>
+          <span className="text-white/60">Good</span>
+        </div>
 
-      <div className="text-[9px] text-slate-400 flex items-center justify-between">
-        <span>50 Kharghar Observations</span>
-        <span>Continuous Grid</span>
+        <div className="flex items-center justify-between text-[13px]">
+          <div className="flex items-center space-x-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#FBBF24] shadow-[0_0_8px_rgba(251,191,36,0.6)]"></div>
+            <span className="font-medium text-white/90">51 - 100</span>
+          </div>
+          <span className="text-white/60">Moderate</span>
+        </div>
+
+        <div className="flex items-center justify-between text-[13px]">
+          <div className="flex items-center space-x-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#EF4444] shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+            <span className="font-medium text-white/90">150+</span>
+          </div>
+          <span className="text-white/60">Severe</span>
+        </div>
       </div>
     </div>
-  );
 };

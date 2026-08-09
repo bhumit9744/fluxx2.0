@@ -22,8 +22,12 @@ class ReplayEngine:
         self.active_filename: str = "kharghar_survey.csv"
         self._load_dataset()
 
-    def _load_dataset(self):
+    def _load_dataset(self, filename: str = None):
         csv_path = settings.DATASET_PATH
+        if filename:
+            from app.config import ENVIRONMENT_DATA_DIR
+            csv_path = ENVIRONMENT_DATA_DIR / filename
+            
         if not os.path.exists(csv_path):
             logger.error(f"Dataset not found at {csv_path}")
             return
@@ -39,6 +43,10 @@ class ReplayEngine:
             normalize_environmental_reading(row, sample_idx=i + 1, total_samples=total)
             for i, row in enumerate(raw_rows)
         ]
+        if filename:
+            self.active_filename = filename
+            self.current_idx = 0
+            
         logger.info(f"Loaded {len(self.samples)} observations from {csv_path}")
 
     def load_custom_csv(self, csv_content: str, filename: str = "uploaded_dataset.csv") -> Dict[str, Any]:
@@ -95,7 +103,7 @@ class ReplayEngine:
             "currentSample": self.current_idx + 1,
             "totalSamples": len(self.samples),
             "timestamp": curr.get("timestamp", ""),
-            "source": "kharghar_csv",
+            "source": getattr(self, "active_filename", "kharghar_dataset.csv"),
             "mode": "replay"
         }
 

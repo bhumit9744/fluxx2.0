@@ -1,0 +1,6 @@
+The Relationship Between Weather and Air Pollution
+Meteorological conditions play a massive role in the dispersion and concentration of air pollutants.
+- Wind Speed: High wind speeds generally disperse pollutants, lowering their concentration near the source (improving local air quality). Low wind speeds or stagnant air allow pollutants to accumulate, drastically worsening air quality.
+- Wind Direction: Determines where the pollution travels. A hotspot downwind of an industrial zone suggests the zone is the source.
+- Temperature and Inversions: Normally, warm air near the ground rises, carrying pollutants away. During a temperature inversion, a layer of warm air traps cooler air near the surface, acting as a lid and causing pollutants (especially PM2.5) to accumulate rapidly.
+- Humidity and Precipitation: Rain generally "washes" water-soluble pollutants and particulate matter out of the air. However, very high humidity without rain can sometimes cause particulates to absorb water, grow in size, and reduce visibility, trapping smog. High humidity combined with heat and sunlight also accelerates the formation of ground-level ozone.

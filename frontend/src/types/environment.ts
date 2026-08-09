@@ -68,19 +68,21 @@ export interface AnomalyEvent {
 export interface IDWGridCell {
   lat: number;
   lng: number;
-  val: number;
-  intensity: number;
-  confidence: number;
+  value: number;
 }
 
 export interface IDWHeatmapData {
   parameter?: string;
-  layer?: string;
-  label?: string;
   unit: string;
-  source?: string;
-  observations_used?: number;
-  total_observations?: number;
+  average?: number;
+  min?: number;
+  max?: number;
+  grid?: IDWGridCell[];
+  hotspot?: {
+    lat: number;
+    lng: number;
+    value: number;
+  };
   bounds: {
     min_lat?: number;
     max_lat?: number;
@@ -88,27 +90,15 @@ export interface IDWHeatmapData {
     max_lng?: number;
     center_lat?: number;
     center_lng?: number;
-    minLat?: number;
-    maxLat?: number;
-    minLng?: number;
-    maxLng?: number;
   };
-  stats: {
+  stats?: {
     min: number;
     max: number;
     avg: number;
     median?: number;
     observations_count?: number;
   };
-  sensor_points: Array<{
-    lat: number;
-    lng: number;
-    val: number;
-    sample: number;
-    timestamp?: string;
-    sensors?: SensorData;
-  }>;
-  grid_cells: IDWGridCell[];
+  grid_cells?: any[];
 }
 
 export interface AIAnalysisReport {

@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://localhost:8000/api/v1';
 
 export const apiService = {
   async getDashboardSummary() {
@@ -13,13 +13,29 @@ export const apiService = {
     return res.json();
   },
 
+  async getAvailableDatasets() {
+    const res = await fetch(`${API_BASE}/ai/datasets`);
+    if (!res.ok) throw new Error('Failed to list datasets');
+    return res.json();
+  },
+
+  async switchDataset(filename: string) {
+    const res = await fetch(`${API_BASE}/replay/dataset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename })
+    });
+    if (!res.ok) throw new Error('Failed to switch dataset');
+    return res.json();
+  },
+
   async getTelemetryHistory() {
     const res = await fetch(`${API_BASE}/telemetry/history`);
     if (!res.ok) throw new Error('Failed to fetch telemetry history');
     return res.json();
   },
 
-  async getHeatmap(layer: string = 'pm25', upto?: number, gridSize: number = 24) {
+  async getHeatmap(layer: string = 'pm25', upto?: number, gridSize: number = 75) {
     const url = upto 
       ? `${API_BASE}/heatmap?parameter=${layer}&upto=${upto}&grid_size=${gridSize}`
       : `${API_BASE}/heatmap?parameter=${layer}&grid_size=${gridSize}`;

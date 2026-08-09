@@ -107,11 +107,15 @@ class ReportService:
             }
         }
 
+        # Generate dynamic title from source filename
+        dataset_source = dataset_info.get("source", "Kharghar Environmental Survey")
+        dynamic_title = dataset_source.replace(".csv", "").replace("_", " ").title() + " Intelligence Report" if "csv" in dataset_source else "Kharghar Environmental Intelligence Report"
+
         # Structure exactly matching the user's requested payload
         return {
             "report": {
                 "id": report_id,
-                "title": "Kharghar Environmental Intelligence Report",
+                "title": dynamic_title,
                 "location": loc,
                 "generated_at": gen_time,
                 "window": f"{dataset_info.get('time_range', {}).get('start', 'Cycle Start')} to {dataset_info.get('time_range', {}).get('end', 'Cycle End')}"

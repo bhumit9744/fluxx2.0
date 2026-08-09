@@ -7,7 +7,7 @@ import { AnalysePage } from './Analyse/AnalysePage';
 import { LiveMapPage } from '../LiveMap/LiveMapPage';
 import { IntelligenceView } from './Intelligence/IntelligenceView';
 import { ReportsView } from './Reports/ReportsView';
-import { FlightOpsView } from './FlightOps/FlightOpsView';
+import { FlightControlPage } from './FlightControl/FlightControlPage';
 import { AICopilot } from '../../components/ai/AICopilot';
 import { Modal } from '../../components/ui/Modal';
 import { useEnvironmentStore } from '../../stores/environmentStore';
@@ -52,7 +52,7 @@ export const DashboardLayout: React.FC = () => {
           <main className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             {activeSection === 'overview' && <OverviewView />}
             {(activeSection === 'environment' || activeSection === 'analyse') && <AnalysePage />}
-            {activeSection === 'flight-ops' && <FlightOpsView />}
+            {activeSection === 'flight-ops' && <FlightControlPage />}
             {activeSection === 'intelligence' && <IntelligenceView />}
             {activeSection === 'reports' && <ReportsView />}
           </main>

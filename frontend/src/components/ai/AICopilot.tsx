@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Sparkles, X, MessageSquare, Send, ArrowRight, Bot, User } from 'lucide-react';
 import { aiService, ChatAction, ChatHistoryMessage } from '../../services/ai';
 import { useEnvironmentStore } from '../../stores/environmentStore';
 import { ChatMessage, MessageItem } from './ChatMessage';
@@ -9,28 +9,22 @@ import { ChatInput } from './ChatInput';
 
 export const AICopilot: React.FC = () => {
   const { setActiveSection, seekSample, currentReading, selectedLayer } = useEnvironmentStore();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       id: '1',
       sender: 'assistant',
-      text: "I am the **FLUXX Environmental Intelligence Copilot**.\n\nI monitor 50 georeferenced sensor observations across Kharghar, analyzing live particulate surges, IDW spatial dispersion, and mitigation directives.",
-      metrics: [
-        { label: "LOCATION", value: "Kharghar, Navi Mumbai" },
-        { label: "SURVEY POINTS", value: "50 observations" },
-        { label: "PM2.5 BASELINE", value: "42.6 µg/m³" },
-        { label: "HOTSPOT SECTOR", value: "Sector 4 (63.1 µg/m³)" }
-      ],
+      text: "I am the **FLUXX Environmental Copilot**.\n\nI monitor georeferenced sensor observations across Kharghar, diagnosing particulate accumulation, spatial dispersion, and VTOL survey missions.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
 
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([
-    "Why is PM2.5 high in Kharghar?",
-    "Where is the hotspot?",
-    "Is the environment improving?"
+    "Why is PM2.5 elevated in Sector 4?",
+    "Show me the hotspot location on Live Map",
+    "What is the current Environmental Risk Index?"
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -69,8 +63,8 @@ export const AICopilot: React.FC = () => {
         userText.trim(),
         historyPayload,
         {
-          observation_index: currentReading.sample,
-          selected_parameter: selectedLayer
+          observation_index: currentReading?.sample || 1,
+          selected_parameter: selectedLayer || 'pm25'
         }
       );
 
@@ -81,6 +75,8 @@ export const AICopilot: React.FC = () => {
         metrics: res.metrics,
         action: res.action,
         source: res.source,
+        grounded: res.grounded,
+        dataset: res.dataset,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
@@ -93,7 +89,7 @@ export const AICopilot: React.FC = () => {
       const errorMsg: MessageItem = {
         id: (Date.now() + 1).toString(),
         sender: 'assistant',
-        text: "Kharghar survey analytics engine is active. Peak PM2.5 is 63.1 µg/m³ in Sector 4 with ERI 45/100 (Moderate Risk).",
+        text: "Kharghar environmental survey analytics engine is active. Peak PM2.5 is 63.1 µg/m³ in Sector 4 with ERI 64/100 (Moderate Risk).",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -104,11 +100,11 @@ export const AICopilot: React.FC = () => {
 
   const handleExecuteAction = (action: ChatAction) => {
     if (action.type === 'SHOW_ON_MAP') {
-      setActiveSection('overview');
+      setActiveSection('live-map');
       const targetSample = action.sample_index || 16;
       seekSample(targetSample);
     } else if (action.type === 'VIEW_COMPARISON') {
-      setActiveSection('environment');
+      setActiveSection('analyse');
     } else if (action.type === 'VIEW_REPORT' || action.type === 'GENERATE_REPORT') {
       setActiveSection('reports');
     }
@@ -116,41 +112,54 @@ export const AICopilot: React.FC = () => {
 
   return (
     <>
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`fixed top-1/2 -translate-y-1/2 z-40 bg-[rgba(255,255,255,0.7)] backdrop-blur-md border border-[var(--fluxx-border)] shadow-[var(--fluxx-shadow-card)] rounded-l-xl p-1.5 transition-all duration-300 ${
-          isOpen ? 'right-[300px]' : 'right-0'
-        } hover:bg-white`}
-        title={isOpen ? "Close Copilot" : "Open Copilot"}
-      >
-        {isOpen ? <ChevronRight className="w-5 h-5 text-[var(--fluxx-muted)]" /> : <ChevronLeft className="w-5 h-5 text-[var(--fluxx-muted)]" />}
-      </button>
+      {/* Floating Bottom-Right Trigger Button */}
+      <div className="fixed bottom-6 right-6 z-50 select-none font-sans">
+        {!isOpen && (
+          <button
+            onClick={() => setIsOpen(true)}
+            className="group flex items-center space-x-2.5 px-4 py-3 rounded-full bg-linear-to-r from-[#F47A24] to-[#FF9F5A] text-white shadow-[0_8px_24px_rgba(244,122,36,0.4)] hover:shadow-[0_12px_32px_rgba(244,122,36,0.55)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-white/20"
+          >
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-white animate-pulse" />
+            </div>
+            <span className="text-xs font-black tracking-wide uppercase font-mono pr-1">
+              Ask FLUXX AI
+            </span>
+          </button>
+        )}
+      </div>
 
-      {/* Docked Drawer */}
-      <div 
-        className={`bg-[var(--fluxx-glass-strong)] backdrop-blur-xl border-l border-[var(--fluxx-border)] shrink-0 h-full flex flex-col transition-all duration-300 ${
-          isOpen ? 'w-[300px]' : 'w-0 overflow-hidden'
-        }`}
-      >
-        <div className="w-[300px] h-full flex flex-col">
+      {/* Floating Chat Modal / Card Window */}
+      {isOpen && (
+        <div className="fixed bottom-6 right-6 z-50 w-[360px] md:w-[400px] h-[580px] max-h-[calc(100vh-80px)] flex flex-col rounded-[28px] bg-[#FAF6F0] border border-[#F3E6D7] shadow-[0_20px_50px_rgba(43,33,28,0.25)] overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200 select-none font-sans">
+          
           {/* Header */}
-          <div className="h-16 border-b border-[var(--fluxx-border)] flex items-center px-4 shrink-0 bg-[rgba(244,122,36,0.03)]">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-[var(--fluxx-orange)] to-[var(--fluxx-coral)] flex items-center justify-center text-white shadow-sm">
+          <div className="flex items-center justify-between px-5 py-3.5 bg-white/95 backdrop-blur-xl border-b border-[#F3E6D7] shrink-0">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#FFF0E5] text-[#F47A24] flex items-center justify-center font-bold shadow-2xs">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-[var(--fluxx-text)] tracking-wide">
-                  FLUXX AI
+                <h3 className="font-extrabold text-xs text-[#2B211C] tracking-tight">
+                  FLUXX AI COPILOT
                 </h3>
-                <p className="text-[10px] text-[var(--fluxx-muted)]">Environmental Copilot</p>
+                <p className="text-[10px] font-mono text-[#8C827A] flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3FA66B] animate-pulse"></span>
+                  <span>Active Diagnostic Agent</span>
+                </p>
               </div>
             </div>
+
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 rounded-xl text-[#8C827A] hover:text-[#2B211C] hover:bg-[#FAF3EA] transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs bg-transparent">
+          {/* Chat Messages Body */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs bg-transparent">
             {messages.map((m) => (
               <ChatMessage
                 key={m.id}
@@ -162,8 +171,8 @@ export const AICopilot: React.FC = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Suggestions */}
-          <div className="px-4 pb-2 bg-transparent">
+          {/* Quick Suggestions */}
+          <div className="px-4 pb-2 bg-transparent shrink-0">
             <SuggestedQuestions
               questions={suggestedQuestions}
               onSelect={handleSend}
@@ -171,15 +180,16 @@ export const AICopilot: React.FC = () => {
             />
           </div>
 
-          {/* Input */}
-          <div className="p-3 border-t border-[var(--fluxx-border)] bg-[rgba(255,255,255,0.5)] backdrop-blur-md">
+          {/* Chat Input */}
+          <div className="p-3 bg-white/90 backdrop-blur-xl border-t border-[#F3E6D7] shrink-0">
             <ChatInput
               onSend={handleSend}
               disabled={loading}
             />
           </div>
+
         </div>
-      </div>
+      )}
     </>
   );
 };

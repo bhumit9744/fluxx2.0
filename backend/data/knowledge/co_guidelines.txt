@@ -1,0 +1,6 @@
+CO (Carbon Monoxide) Guidelines
+Carbon Monoxide is a colorless, odorless gas emitted from combustion processes.
+The majority of CO emissions to ambient air come from mobile sources (vehicles).
+High levels of CO can reduce the amount of oxygen that can be transported in the blood stream to critical organs like the heart and brain.
+At very high levels, which are possible indoors or in other enclosed environments, CO can cause dizziness, confusion, unconsciousness and death.
+In outdoor environments, elevated CO often indicates close proximity to heavy traffic, industrial combustion, or active fires.

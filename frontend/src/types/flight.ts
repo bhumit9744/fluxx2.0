@@ -1,6 +1,6 @@
-export type FlightStatus = "READY" | "AIRBORNE" | "LANDING" | "HOLD";
+export type FlightStatus = "READY" | "AIRBORNE" | "LANDING" | "HOLD" | "GROUNDED";
 export type FlightMode = "AUTO" | "HOLD" | "RTL" | "LAND";
-export type MissionStage = "TAKEOFF" | "TRANSIT" | "SENSOR SWEEP" | "HOTSPOT SURVEY" | "RETURN" | "LAND";
+export type MissionStage = "TAKEOFF" | "TRANSIT" | "SENSOR SWEEP" | "HOTSPOT SURVEY" | "RETURN" | "LAND" | "RETURN TO BASE" | "SURVEY";
 
 export interface DroneInfo {
   id: string;

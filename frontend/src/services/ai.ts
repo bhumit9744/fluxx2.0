@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://localhost:8000/api/v1';
 
 export interface ChatMetric {
   label: string;
@@ -24,7 +24,9 @@ export interface ChatHistoryMessage {
 
 export interface ChatResponse {
   answer: string;
-  reply: string;
+  reply?: string;
+  dataset?: string | null;
+  grounded: boolean;
   metrics?: ChatMetric[];
   action?: ChatAction | null;
   suggested_follow_ups?: string[];
@@ -39,7 +41,7 @@ export interface ChatResponse {
 export const aiService = {
   async sendChat(
     message: string,
-    messages: ChatHistoryMessage[] = [],
+    history: ChatHistoryMessage[] = [],
     context?: { observation_index?: number; selected_parameter?: string }
   ): Promise<ChatResponse> {
     const res = await fetch(`${API_BASE}/ai/chat`, {
@@ -47,7 +49,7 @@ export const aiService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message,
-        messages,
+        history,
         context
       })
     });
@@ -65,3 +67,4 @@ export const aiService = {
     return res.json();
   }
 };
+
