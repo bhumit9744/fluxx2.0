@@ -160,8 +160,13 @@ def view_report_html(request: Request, report_id: str):
     if not report_data:
         raise HTTPException(status_code=404, detail="HTML data missing from report.")
         
+    lang = report_data.get("report", {}).get("language", "en")
+    template_name = f"report_template_{lang}.html"
+    if not os.path.exists(os.path.join(templates_dir, template_name)):
+        template_name = "report_template_en.html"
+        
     return templates.TemplateResponse(
-        "report_template.html",
+        template_name,
         {
             "request": request,
             **report_data
