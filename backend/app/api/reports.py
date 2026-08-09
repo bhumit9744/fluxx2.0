@@ -156,9 +156,26 @@ def view_report_html(request: Request, report_id: str):
     if not report:
         raise HTTPException(status_code=404, detail=f"Report {report_id} not found.")
     
-    report_data = report.get("fullReport", {})
+    report_data = report.get("fullReport") or {}
+    
+    # If the report is a historical/mock report and doesn't have the full JSON payload,
+    # construct a basic fallback payload so the template still renders something.
     if not report_data:
-        raise HTTPException(status_code=404, detail="HTML data missing from report.")
+        report_data = {
+            "report": {
+                "title": report["title"],
+                "location": report["location"],
+                "timestamp": report["createdAt"],
+                "language": "en"
+            },
+            "metrics": report["metrics"],
+            "summary": {"primary_driver": report["summary"]},
+            "ai": {
+                "pros": report["pros"],
+                "cons": report["cons"],
+                "recommendations": report["recommendations"]
+            }
+        }
         
     lang = report_data.get("report", {}).get("language", "en")
     template_name = f"report_template_{lang}.html"
