@@ -66,6 +66,7 @@ export const LiveMapPage: React.FC = () => {
 
   const [activeStyle, setActiveStyle] = useState('dark');
   const [showAqiHeatmap, setShowAqiHeatmap] = useState(true);
+  const [showSimulated, setShowSimulated] = useState(true);
   const [clickedFeature, setClickedFeature] = useState<any | null>(null);
 
   // Request live geolocation on mount
@@ -86,28 +87,64 @@ export const LiveMapPage: React.FC = () => {
 
   // Compute feature collection with AQI and intensity
   const data = useMemo(() => {
-    if (!allSamples || allSamples.length === 0) return null;
+    // Generate a random cluster of simulated points
+    const simulatedPoints = !showSimulated ? [] : Array.from({ length: 250 }).map((_, i) => {
+      // Create a dense cluster around a central point (slightly offset from user location)
+      const centerLat = 19.0520;
+      const centerLng = 73.0720;
+      
+      // Box-Muller transform for normal distribution to make it look like a real dispersion cloud
+      const u1 = Math.random();
+      const u2 = Math.random();
+      const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+      const z1 = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
+      
+      const latOffset = z0 * 0.005; // standard deviation
+      const lngOffset = z1 * 0.005; 
+      
+      // AQI is highest in the center (closer to 0 offset means higher PM2.5)
+      const distance = Math.sqrt(latOffset*latOffset + lngOffset*lngOffset);
+      const pm25 = Math.max(20, 450 - (distance * 30000)); // peak around 450, falling off quickly
+      const aqi = calculateAQI(pm25);
+      
+      return {
+        type: 'Feature' as const,
+        id: `sim_${i}`,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [centerLng + lngOffset, centerLat + latOffset]
+        },
+        properties: { 
+          aqi: aqi,
+          mag: Math.min(aqi / 500, 1),
+          timestamp: new Date().toISOString()
+        }
+      };
+    });
+
+    const realPoints = (allSamples || []).map((s, i) => {
+      const pm25 = s.sensors?.pm25 || 0;
+      const aqi = calculateAQI(pm25);
+      return {
+        type: 'Feature' as const,
+        id: `real_${i}`, 
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [s.location.longitude, s.location.latitude]
+        },
+        properties: { 
+          aqi: aqi,
+          mag: Math.min(aqi / 500, 1), 
+          timestamp: s.timestamp
+        }
+      };
+    });
+
     return {
       type: 'FeatureCollection' as const,
-      features: allSamples.map((s, i) => {
-        const pm25 = s.sensors?.pm25 || 0;
-        const aqi = calculateAQI(pm25);
-        return {
-          type: 'Feature' as const,
-          id: i, // unique ID for maplibre interactions
-          geometry: {
-            type: 'Point' as const,
-            coordinates: [s.location.longitude, s.location.latitude]
-          },
-          properties: { 
-            aqi: aqi,
-            mag: Math.min(aqi / 500, 1), // Normalized intensity 0..1
-            timestamp: s.timestamp
-          }
-        };
-      })
+      features: [...simulatedPoints, ...realPoints]
     };
-  }, [allSamples]);
+  }, [allSamples, showSimulated]);
 
   const heatmapLayerStyle: any = {
     id: 'aqi-heatmap',
@@ -220,6 +257,18 @@ export const LiveMapPage: React.FC = () => {
          </div>
          <div className="flex gap-3">
            
+           <button 
+             onClick={() => setShowSimulated(!showSimulated)}
+             className={clsx(
+               "flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors cursor-pointer shadow-sm text-sm font-bold",
+               showSimulated 
+                 ? "bg-red-50 border-red-200 text-red-500" 
+                 : "bg-white border-[#F3E6D7] text-[#8C827A] hover:text-[#2B211C]"
+             )}
+           >
+             SIMULATE HOTSPOT
+           </button>
+
            <button 
              onClick={() => setShowAqiHeatmap(!showAqiHeatmap)}
              className={clsx(
