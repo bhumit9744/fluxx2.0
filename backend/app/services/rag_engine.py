@@ -89,7 +89,7 @@ class RAGEngine:
                     
                     # Compute aggregations for the chunk
                     timestamps = [r.get('timestamp') for r in chunk if r.get('timestamp')]
-                    pm25_vals = [r.get('pm25') for r in chunk if r.get('pm25') is not None]
+                    pm25_vals = [r.get('pm2_5', r.get('pm25')) for r in chunk if r.get('pm2_5', r.get('pm25')) is not None]
                     
                     if not pm25_vals: continue
                     

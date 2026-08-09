@@ -165,32 +165,37 @@ def is_data_question(question: str) -> bool:
 def resolve_dataset(
     question: str,
 ) -> str | None:
+    from app.config import settings
+    import os
 
-    files = csv_manager.list_files(
-        "environment"
-    )
-
+    files = csv_manager.list_files("environment")
     q = question.lower()
 
+    # Match by exact stem
     for file in files:
-
         name = file.lower()
-
         if name.replace(".csv", "") in q:
             return file
+
+    # Match by location words
+    for file in files:
+        stem = file.lower().replace(".csv", "")
+        # e.g. "kharghar" in "what is the average aqi in kharghar"
+        parts = stem.split("_")
+        for part in parts:
+            if part and part != "fluxx" and len(part) > 3 and part in q:
+                return file
 
     if len(files) == 1:
         return files[0]
 
-    # Location-aware matching
-    for file in files:
+    # Default to the currently active dataset in config
+    default_filename = os.path.basename(settings.DATASET_PATH)
+    if default_filename in files:
+        return default_filename
 
-        stem = file.lower().replace(
-            ".csv",
-            "",
-        )
-
-        if stem in q:
-            return file
-
+    # Fallback to the first file if somehow active dataset isn't in list
+    if files:
+        return files[0]
+        
     return None
