@@ -1,7 +1,6 @@
 import React from 'react';
 import { DashboardHeader } from './DashboardHeader';
 import { KPIGrid } from './KPIGrid';
-import { EnvironmentMapCard } from './EnvironmentMapCard';
 import { OverviewSummary } from './OverviewSummary';
 import { PM25TrendChart } from './PM25TrendChart';
 import { ParameterComparison } from './ParameterComparison';
@@ -17,14 +16,9 @@ export const OverviewView: React.FC = () => {
       {/* 2. 6 KPI Cards Grid */}
       <KPIGrid />
 
-      {/* 3. Middle Row: Environmental Heatmap (2/3) + Overview Summary (1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-        <div className="lg:col-span-2">
-          <EnvironmentMapCard />
-        </div>
-        <div className="lg:col-span-1">
-          <OverviewSummary />
-        </div>
+      {/* 3. Middle Row: Overview Summary */}
+      <div className="grid grid-cols-1 gap-5 items-start">
+        <OverviewSummary />
       </div>
 
       {/* 4. Bottom Row: PM2.5 Trend Chart (2/3) + Parameter Comparison (1/3) */}
