@@ -1,7 +1,7 @@
 export type WebSocketCallback = (data: any) => void;
 
 class WebSocketClient {
-  private url: string = 'ws://localhost:8000/ws/live';
+  private url: string = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/live';
   private ws: WebSocket | null = null;
   private listeners: Set<WebSocketCallback> = new Set();
   private reconnectTimeout: any = null;
